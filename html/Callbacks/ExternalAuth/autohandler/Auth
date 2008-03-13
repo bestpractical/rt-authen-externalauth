@@ -1,0 +1,109 @@
+<%init>
+
+# If the user is logging in, let's authenticate; if they can auth but don't load
+# (e.g. they don't have an account but external auth succeeds), we'll autocreate
+# their account.
+unless ($session{'CurrentUser'}) {
+    
+    # Password has not been confirmed valid until we say so
+    my $password_validated;
+    # User has only been autocreated if we say so later on
+    # This is used to stop a pointless LookupExternalUserInfo 
+    # called by LookupFromExternal later on since it's already
+    # called by RT::User::Create if the user was autocreated
+    my $user_autocreated = 0;
+
+    # If $user has been passed by login page, 
+    # or any other custom code previous to this
+    if (defined ($user)) {
+        $session{'CurrentUser'} = RT::CurrentUser->new();
+        $session{'CurrentUser'}->Load($user);
+
+        # Unless we have loaded a valid user with a UserID
+        unless ($session{'CurrentUser'}->Id) {
+            # Start with a new SystemUser
+            my $UserObj = RT::User->new($RT::SystemUser);
+            # Set the user's name to the one we were given
+            my ($val, $msg) = $UserObj->SetName($user);
+
+            # If a password was given on the login page, validate it
+            if (defined($pass)) {
+                $password_validated = $UserObj->IsPassword($pass);
+            }
+            
+            # If the password was validated successfully
+            # start the autocreation process to create the user
+            # permanently in RT
+            if ($password_validated) {
+                    ### If there were a standard param to check for whether or not we
+                    ### should autocreate authenticated users, we'd check it here.
+                    my ($val, $msg) = 
+                      $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
+                                       Name   => $user,
+                                       Gecos  => $user,
+                                      );
+                    $RT::Logger->info(  "Autocreated authenticated user",
+                                        $UserObj->Name,
+                                        "(",
+                                        $UserObj->Id,
+                                        ")");
+                    $user_autocreated = 1;
+            }
+
+            # If we autocreated a user, then load the user as the CurrentUser in $session
+            # To RT, this means we have a valid, authenticated user
+            $session{'CurrentUser'}->Load($user) if $UserObj->Id;
+        }
+    }
+    
+    # If we now have a completely valid RT user to play with...
+    if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
+        unless($user_autocreated){
+            # If we definitely have an authenticated user and all is well,
+            # and we haven't JUST created the user, then update their 
+            # information from external services before doing anything else
+            $session{'CurrentUser'}->UserObj->UpdateFromExternal();
+        }
+                
+        # Now that we definitely have up-to-date user information,
+        # if the user is disabled, kick them out. Now!
+        if ($session{'CurrentUser'}->UserObj->Disabled) {
+            delete $session{'CurrentUser'};
+        }
+    }
+    # Original thank to Walter Duncan for these session deletes.
+    
+    # If the user has already been authenticated successfully above
+    # then all is well, log the successful user auth
+    # Else, ensure the session dies.
+    
+    # We will not check the password here, because this will be
+    # done by the autohandler this Callback is extending if
+    # we delete the session.
+    
+    # If we have a full user and the session hasn't already been deleted
+    if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
+        if($password_validated) {
+            
+            $RT::Logger->info(  "Successful login for",
+                                $user,
+                                "from",
+                                $ENV{'REMOTE_ADDR'});
+            # Do not delete the session. User stays logged in and
+            # autohandler will not check the password again
+        }
+    } else {
+        # Make SURE the session is deleted.
+        delete $session{'CurrentUser'};
+        # This will cause autohandler to request IsPassword 
+        # which will in turn call IsExternalPassword
+    }
+}
+return;
+</%init>
+
+<%ARGS>
+$user => undef
+$pass => undef
+$menu => undef
+</%ARGS>

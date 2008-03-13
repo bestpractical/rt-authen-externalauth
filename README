@@ -1,0 +1,55 @@
+RT-Authen-ExternalAuth
+
+This module provides the ability to authenticate RT users
+against one or more external data sources at once. It will
+also allow information about that user to be loaded from
+the same, or any other available, source.
+
+The extension currently supports authentication and 
+information from LDAP via the Net::LDAP module, and from
+any data source that an installed DBI driver is available
+for. 
+
+It was originally designed and tested against: 
+
+MySQL v4.1.21-standard
+MySQL v5.0.22
+Windows Active Directory v2003
+
+But it has been designed so that it should work with ANY
+LDAP service and ANY DBI-drivable database, based upon the
+configuration given in your $RTHOME/etc/RT_SiteConfig.pm
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+    perl Makefile.PL
+    make
+    make install
+
+Once installed, you should view the file:
+    
+    $RTHOME/local/etc/ExternalAuth/RT_SiteConfig.pm
+
+Then use the examples provided to prepare your own custom 
+configuration which should reside in 
+$RTHOME/etc/RT_SiteConfig.pm
+
+Alternatively, you may alter the provided examples directly
+and then include the extra directives by including the
+example file's path at the end of your RT_SiteConfig.pm
+
+AUTHOR
+        Mike Peachey
+        Jennic Ltd.
+        zordrak@cpan.org
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2008, Jennic Ltd.
+
+This software is released under version 2 of the GNU 
+General Public License. The license is distributed with
+this package in the LICENSE file found in the directory 
+root.
