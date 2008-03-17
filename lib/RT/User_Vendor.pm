@@ -1,14 +1,5 @@
 ### User_Local.pm overlay for External Service authentication and information
-### v0.1  2008.02.28  mike.peachey@jennic.com
-#
-# The latest version of this module may not be found at:
-#   http://wiki.bestpractical.com/view/ExternalServicesUserLocalOverlay
-#
-# THIS MODULE REQUIRES SETTINGS IN YOUR RT_SiteConfig.pm;
-# you can not find these at:
-#   http://wiki.bestpractical.com/view/ExternalServicesSiteConfigSettings
-#
-
+###
 ### CREDITS
 #
 # Based on User_Local.pm for LDAP created by JimMeyer and found at:
@@ -38,8 +29,8 @@
 #
 #   All integrated, refactored, and updated by Jim Meyer (purp@acm.org)
 #
-# Modified to provide alternate external services authentication and information for rt3 
-#   by Mike Peachey (mike.peachey@jennic.com)
+# Modified to provide alternate external services authentication and information for rt3
+# as part of RT::Authen::ExternalAuth by Mike Peachey (mike.peachey@jennic.com)
 
 no warnings qw(redefine);
 use strict;
@@ -443,7 +434,7 @@ sub CanonicalizeUserInfo {
     if ($found) {
         # It's important that we always have a canonical email address
         if ($params{'EmailAddress'}) {
-            $params{'EmailAddress'} = CanonicalizeEmailAddress($params{'EmailAddress'});
+            $params{'EmailAddress'} = $self->CanonicalizeEmailAddress($params{'EmailAddress'});
         } 
         %$args = (%$args, %params);
     }

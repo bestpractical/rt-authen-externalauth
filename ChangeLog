@@ -1,0 +1,25 @@
+v0.02    2008-03-17    Mike Peachey <zordrak@cpan.org>
+
+    * lib/RT/User_Vendor.pm
+
+        Bug #1 found on line 446. 
+
+        CanonicalizeUserInfo was being called directly, instead of being 
+        called on the $self user object.
+        
+        This was causing CanonicalizeUserInfo to shift the e-mail address 
+        it was passed into the $self var instead of the $email var. It was
+        therefore returning a blank e-mail address regardless of the input.
+
+    * lib/RT/User_Vendor.pm
+
+        Header comments altered to reflect that the file is part of the
+        RT::Authen::ExternalAuth extension.
+
+    * /lib/RT/Authen/ExternalAuth.pm
+
+        Version updated to 0.02
+
+v0.01    2008-03-13    Mike Peachey <zordrak@cpan.org>
+
+    * Initial Release

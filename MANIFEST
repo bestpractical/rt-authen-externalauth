@@ -1,3 +1,4 @@
+ChangeLog
 etc/RT_SiteConfig.pm
 html/Callbacks/ExternalAuth/autohandler/Auth
 inc/Module/Install.pm
