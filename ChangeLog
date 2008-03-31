@@ -1,3 +1,37 @@
+v0.03    2008-03-31    Mike Peachey <zordrak@cpan.org>
+
+    * html/Callbacks/ExternalAuth/autohandler/Auth 
+
+        Bug found on lines 94-100.
+
+        The ELSE block starting on line 95 was assigned to the IF starting
+        on 85 instead of the IF block starting on line 86. This meant that
+        if the user entered at the login screen exists no password would
+        be checked.
+
+        It was doing this:
+
+        If session has current user who has an ID
+            If password has already been validated
+                SUCCESS
+            Else
+                Return to autohandler with valid session & implicit auth
+        Else delete session
+
+    
+        This has now been corrected to this:
+
+        If session has current user who has an ID
+            If password has already been validated
+                SUCCESS
+            Else
+                Delete session
+        Else return to autohandler with whatever we had before the block
+
+    * /lib/RT/Authen/ExternalAuth.pm
+
+        Version updated to 0.03
+
 v0.02    2008-03-17    Mike Peachey <zordrak@cpan.org>
 
     * lib/RT/User_Vendor.pm

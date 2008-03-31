@@ -91,12 +91,12 @@ unless ($session{'CurrentUser'}) {
                                 $ENV{'REMOTE_ADDR'});
             # Do not delete the session. User stays logged in and
             # autohandler will not check the password again
+        } else {
+            # Make SURE the session is deleted.
+            delete $session{'CurrentUser'};
+            # This will cause autohandler to request IsPassword 
+            # which will in turn call IsExternalPassword
         }
-    } else {
-        # Make SURE the session is deleted.
-        delete $session{'CurrentUser'};
-        # This will cause autohandler to request IsPassword 
-        # which will in turn call IsExternalPassword
     }
 }
 return;
