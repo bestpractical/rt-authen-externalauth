@@ -1,3 +1,21 @@
+v0.04    2008-04-03    Mike Peachey <zordrak@cpan.org>
+
+    * etc/RT_SiteConfig.pm
+        
+        The example LDAP ExternalSettings configuration did not contain
+        example values for user and pass for RT's connection to an LDAP
+        server. These have now been added.
+
+        Thanks to Andrew Fay <andrew.fay@hotmail.com> for noticing this one.
+
+    * ChangeLog
+
+        Removed a "/" from the start of the ExternalAuth.pm file line in 0.03
+
+    * /lib/RT/Authen/ExternalAuth.pm
+
+        Version updated to 0.04
+
 v0.03    2008-03-31    Mike Peachey <zordrak@cpan.org>
 
     * html/Callbacks/ExternalAuth/autohandler/Auth 
@@ -28,7 +46,7 @@ v0.03    2008-03-31    Mike Peachey <zordrak@cpan.org>
                 Delete session
         Else return to autohandler with whatever we had before the block
 
-    * /lib/RT/Authen/ExternalAuth.pm
+    * lib/RT/Authen/ExternalAuth.pm
 
         Version updated to 0.03
 

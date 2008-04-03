@@ -98,6 +98,14 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         # The server hosting the service
                                                         'server'                    =>  'server.domain.tld',
                                                         ## SERVICE-SPECIFIC SECTION
+                                                        # If you can bind to your LDAP server anonymously you should 
+                                                        # remove the user and pass config lines, otherwise specify them here:
+                                                        # 
+                                                        # The username RT should use to connect to the LDAP server 
+                                                        'user'                      =>  'rt_ldap_username',
+                                                        # The password RT should use to connect to the LDAP server
+                                                        'pass'                    =>  'rt_ldap_password',
+                                                        #
                                                         # The LDAP search base
                                                         'base'                      =>  'ou=Organisational Unit,dc=domain,dc=TLD',
                                                         # The filter to use to match RT-Users
