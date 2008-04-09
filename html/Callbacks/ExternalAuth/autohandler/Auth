@@ -7,10 +7,15 @@ unless ($session{'CurrentUser'}) {
     
     # Password has not been confirmed valid until we say so
     my $password_validated;
-    # User has only been autocreated if we say so later on
-    # This is used to stop a pointless LookupExternalUserInfo 
-    # called by LookupFromExternal later on since it's already
-    # called by RT::User::Create if the user was autocreated
+
+    # This WAS used to stop a pointless LookupExternalUserInfo
+    # called by UpdateFromExternal later on since it's already
+    # called by RT::User::Create if the user is autocreated
+    # but this has been deprecated pending a little bit of a
+    # rewrite since I realised that we're not calling
+    # CanonicalizeUserInfo but UpdateFromExternal which is the
+    # only code that checks whether the user is externally
+    # marked as disabled.
     my $user_autocreated = 0;
 
     # If $user has been passed by login page, 
@@ -58,12 +63,14 @@ unless ($session{'CurrentUser'}) {
     
     # If we now have a completely valid RT user to play with...
     if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
-        unless($user_autocreated){
-            # If we definitely have an authenticated user and all is well,
-            # and we haven't JUST created the user, then update their 
-            # information from external services before doing anything else
-            $session{'CurrentUser'}->UserObj->UpdateFromExternal();
-        }
+        
+        # Even if we have JUST created the user in RT, we are going to
+        # reload their information from an external source. This allows us
+        # to be sure that the user the cookie gave us really does exist in
+        # the database, but more importantly, UpdateFromExternal will check 
+        # whether the user is disabled or not which we have not been able to 
+        # do during auto-create
+        $session{'CurrentUser'}->UserObj->UpdateFromExternal();
                 
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!

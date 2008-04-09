@@ -959,7 +959,7 @@ sub UpdateFromExternal {
                                 "per External Service",
                                 "($val, $message)\n");
 
-            # Update their info from external servicen using the username as the lookup key
+            # Update their info from external service using the username as the lookup key
             # CanonicalizeUserInfo will work out for itself which service to use
             # Passing it a service instead could break other RT code
             my %args = (Name => $name_to_update);
