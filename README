@@ -28,9 +28,16 @@ To install this module, run the following commands:
     make
     make install
 
+If you are using RT 3.8.x, you need to enable this
+module by adding RT::Authen::ExternalAuth to your
+@Plugins configuration:
+
+Set( @Plugins, qw(RT::Authen::ExternalAuth) );
+
 Once installed, you should view the file:
     
-    $RTHOME/local/etc/ExternalAuth/RT_SiteConfig.pm
+3.4/3.6    $RTHOME/local/etc/ExternalAuth/RT_SiteConfig.pm
+3.8        $RTHOME/local/plugins/RT-Auth-ExternalAuth/etc/RT_SiteConfig.pm
 
 Then use the examples provided to prepare your own custom 
 configuration which should reside in 

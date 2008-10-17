@@ -1,3 +1,16 @@
+v0.06_02    2008-10-17	Kevin Falcone <falcone@cpan.org>
+
+	* update changelog
+
+v0.06_01    2008-10-17	Kevin Falcone <falcone@cpan.org>
+
+	* lib/RT/Authen/User_Vendor.pm
+
+	Add a patch to be compatible with 3.8
+
+	* Upgrade Module::Install::RTx to work better
+	  with 3.8
+
 v0.05    2008-04-09    Mike Peachey <zordrak@cpan.org>
 
     * lib/RT/Authen/User_Vendor.pm
