@@ -1,20 +1,21 @@
----
+--- 
 abstract: RT Authen-ExternalAuth Extension
-author:
-  - 'Mike Peachey <zordrak@cpan.org>'
+author: 
+  - Mike Peachey <zordrak@cpan.org>
 distribution_type: module
-generated_by: Module::Install version 0.68
+generated_by: Module::Install version 0.70
 license: GPL version 2
-meta-spec:
+meta-spec: 
   url: http://module-build.sourceforge.net/META-spec-v1.3.html
   version: 1.3
 name: RT-Authen-ExternalAuth
-no_index:
-  directory:
+no_index: 
+  directory: 
     - etc
     - html
+    - po
+    - var
     - inc
-    - t
-requires:
+requires: 
   RT: 0
-version: 0.05
+version: 0.06_02
