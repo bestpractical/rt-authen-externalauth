@@ -348,7 +348,7 @@ sub IsPassword {
         return (undef);
     }
 
-    if ( $self->PrincipalObj->Disabled ) {
+    if ( $self->PrincipalObj && $self->PrincipalObj->Disabled ) {
         $RT::Logger->info("Disabled user " . $self->Name . 
                           " tried to log in" );
         return (undef);
