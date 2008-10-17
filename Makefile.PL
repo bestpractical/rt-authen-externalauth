@@ -8,5 +8,11 @@ author('Mike Peachey <zordrak@cpan.org>');
 all_from('lib/RT/Authen/ExternalAuth.pm');
 
 requires('RT');
+requires('Net::LDAP');
 
+features(
+  'SSL LDAP Connections' => [
+    -default => 0,
+    'Net::SSLeay' => 0]
+);
 &WriteAll;
