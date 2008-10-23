@@ -47,6 +47,16 @@ Alternatively, you may alter the provided examples directly
 and then include the extra directives by including the
 example file's path at the end of your RT_SiteConfig.pm
 
+UPGRADING
+
+If you are upgrading from 0.05 you may have some leftover
+parts of the module in 
+
+$RTHOME/local/lib/RT/User_Vendor.pm 
+$RTHOME/local/lib/RT/Authen/External_Auth.pm
+
+that will conflict with the new install and should be removed
+
 AUTHOR
         Mike Peachey
         Jennic Ltd.
