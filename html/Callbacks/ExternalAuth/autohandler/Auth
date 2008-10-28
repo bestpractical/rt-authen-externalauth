@@ -47,6 +47,10 @@ unless ($session{'CurrentUser'}) {
                                        Name   => $user,
                                        Gecos  => $user,
                                       );
+                    unless ($val) {
+                        $RT::Logger->error( "Couldn't create user $user: $msg" );
+                        return;
+                    }
                     $RT::Logger->info(  "Autocreated authenticated user",
                                         $UserObj->Name,
                                         "(",
