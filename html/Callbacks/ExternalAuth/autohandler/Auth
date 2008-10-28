@@ -61,7 +61,12 @@ unless ($session{'CurrentUser'}) {
 
             # If we autocreated a user, then load the user as the CurrentUser in $session
             # To RT, this means we have a valid, authenticated user
-            $session{'CurrentUser'}->Load($user) if $UserObj->Id;
+            if ($UserObj->Id) {
+                my ($ret, $msg) = $session{'CurrentUser'}->Load($user);
+                unless ($ret) {
+                    $RT::Logger->error("Couldn't load user $user: $msg");
+                }
+            }
         }
     }
     
