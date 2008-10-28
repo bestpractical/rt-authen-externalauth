@@ -819,6 +819,9 @@ sub UpdateFromExternal {
             if ($filter eq "()") { undef($filter) };
             if ($disable_filter eq "()") { undef($disable_filter) };
 
+            unless ($disable_filter) {
+                $RT::Logger->error("You haven't specified a d_filter in your configuration.  Not specifying a d_filter usually results in all users being marked as disabled and being unable to log in");
+            }
 
             if (defined($config->{'attr_map'}->{'Name'})) {
                 # Construct the complex filter
