@@ -1,3 +1,8 @@
+	* update README to talk about removing old files in local/
+	* complain if a user doesn't specify a d_filter
+	* Check the return value from calling RT::User::Create
+	* Check the return value when loading an autocreated user
+
 v0.06_02    2008-10-17	Kevin Falcone <falcone@cpan.org>
 
 	* update changelog
