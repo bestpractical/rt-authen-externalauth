@@ -1,20 +1,53 @@
-	* update README to talk about removing old files in local/
-	* complain if a user doesn't specify a d_filter
-	* Check the return value from calling RT::User::Create
-	* Check the return value when loading an autocreated user
+v0.06_03 2008-10-31    Mike Peachey <zordrak@cpan.org>
+                       Kevin Falcone <falcone@cpan.org>
 
-v0.06_02    2008-10-17	Kevin Falcone <falcone@cpan.org>
+    * html/Callbacks/ExternalAuth/autohandler/Auth
+            
+        Add fix to work around a plugin bug in RT-3.8.0 & RT-3.8.1
+        preventing User_Vendor.pm overlay being required before
+        RT::User is loaded.
+        
+        Check the return value from calling RT::User::Create. 
 
-	* update changelog
+        Check the return value when loading an autocreated user.
 
-v0.06_01    2008-10-17	Kevin Falcone <falcone@cpan.org>
+    * README
+            
+        Updated to talk about removing old files in local/.
 
-	* lib/RT/Authen/User_Vendor.pm
+    * lib/RT/Authen/User_Vendor.pm
 
-	Add a patch to be compatible with 3.8
+        Added error-checking to complain if a an LDAP configuration is
+        in use, but no d_filter has been specified.
 
-	* Upgrade Module::Install::RTx to work better
-	  with 3.8
+    * lib/RT/Authen/ExternalAuth.pm
+
+        Version updated to 0.06_03.
+
+    * ChangeLog
+
+        General clean-up.
+
+
+v0.06_02 2008-10-01    Kevin Falcone <falcone@cpan.org>
+
+    * ChangeLog
+
+       Updates to previous release.
+
+    * lib/RT/Authen/ExternalAuth.pm
+
+        Version updated to 0.06_02.
+
+
+v0.06_01 2008-10-17    Kevin Falcone <falcone@cpan.org>
+
+    * lib/RT/Authen/User_Vendor.pm
+
+        Add a patch to be compatible with 3.8
+
+    * Upgrade Module::Install::RTx to work better with RT-3.8.x
+
 
 v0.05    2008-04-09    Mike Peachey <zordrak@cpan.org>
 
@@ -47,6 +80,7 @@ v0.05    2008-04-09    Mike Peachey <zordrak@cpan.org>
 
         Version updated to 0.05
 
+
 v0.04    2008-04-03    Mike Peachey <zordrak@cpan.org>
 
     * etc/RT_SiteConfig.pm
@@ -64,6 +98,7 @@ v0.04    2008-04-03    Mike Peachey <zordrak@cpan.org>
     * lib/RT/Authen/ExternalAuth.pm
 
         Version updated to 0.04
+
 
 v0.03    2008-03-31    Mike Peachey <zordrak@cpan.org>
 
@@ -99,6 +134,7 @@ v0.03    2008-03-31    Mike Peachey <zordrak@cpan.org>
 
         Version updated to 0.03
 
+
 v0.02    2008-03-17    Mike Peachey <zordrak@cpan.org>
 
     * lib/RT/User_Vendor.pm
@@ -120,6 +156,7 @@ v0.02    2008-03-17    Mike Peachey <zordrak@cpan.org>
     * /lib/RT/Authen/ExternalAuth.pm
 
         Version updated to 0.02
+
 
 v0.01    2008-03-13    Mike Peachey <zordrak@cpan.org>
 
