@@ -1,3 +1,18 @@
+v0.06    2008-11-01    Mike Peachey <zordrak@cpan.org>
+
+    * README
+
+        A few minor tweaks.
+
+    * lib/RT/Authen/ExternalAuth.pm
+
+        Version updated to 0.06 
+
+    * etc/RT_SiteConfig.pm
+
+        A number of clarifications added to the example config comments
+        such as making clear the fact that a valid d_filter is required.
+
 v0.06_03 2008-10-31    Mike Peachey <zordrak@cpan.org>
                        Kevin Falcone <falcone@cpan.org>
 

@@ -108,10 +108,18 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         #
                                                         # The LDAP search base
                                                         'base'                      =>  'ou=Organisational Unit,dc=domain,dc=TLD',
+                                                        #
+                                                        # ALL FILTERS MUST BE VALID LDAP FILTERS ENCASED IN PARENTHESES!
+                                                        # YOU **MUST** SPECIFY A filter AND A d_filter!!
+                                                        #
                                                         # The filter to use to match RT-Users
                                                         'filter'                    =>  '(FILTER_STRING)',
+                                                        # A catch-all example filter: '(objectClass=*)'
+                                                        #
                                                         # The filter that will only match disabled users
                                                         'd_filter'                  =>  '(FILTER_STRING)',
+                                                        # A catch-none example d_filter: '(objectClass=FooBarBaz)'
+                                                        #
                                                         # Should we try to use TLS to encrypt connections?
                                                         'tls'                       =>  0,
                                                         # What other args should I pass to Net::LDAP->new($host,@args)?
@@ -122,6 +130,8 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         'group_attr'                =>  'GROUP_ATTR',
                                                         ## RT ATTRIBUTE MATCHING SECTION
                                                         # The list of RT attributes that uniquely identify a user
+							# This example shows what you *can* specify.. I recommend reducing this
+                                                        # to just the Name and EmailAddress to save encountering problems later.
                                                         'attr_match_list'           => [    'Name',
                                                                                             'EmailAddress', 
                                                                                             'RealName',

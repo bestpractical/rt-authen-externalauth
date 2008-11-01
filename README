@@ -20,6 +20,7 @@ But it has been designed so that it should work with ANY
 LDAP service and ANY DBI-drivable database, based upon the
 configuration given in your $RTHOME/etc/RT_SiteConfig.pm
 
+
 INSTALLATION
 
 To install this module, run the following commands:
@@ -40,12 +41,13 @@ Once installed, you should view the file:
 3.8        $RTHOME/local/plugins/RT-Auth-ExternalAuth/etc/RT_SiteConfig.pm
 
 Then use the examples provided to prepare your own custom 
-configuration which should reside in 
+configuration which should be added to your site configuration in
 $RTHOME/etc/RT_SiteConfig.pm
 
 Alternatively, you may alter the provided examples directly
-and then include the extra directives by including the
+and then include the extra directives by 'requiring' the
 example file's path at the end of your RT_SiteConfig.pm
+
 
 UPGRADING
 
@@ -55,7 +57,7 @@ parts of the module in
 $RTHOME/local/lib/RT/User_Vendor.pm 
 $RTHOME/local/lib/RT/Authen/External_Auth.pm
 
-that will conflict with the new install and should be removed
+that will conflict with the new install and these should be removed
 
 AUTHOR
         Mike Peachey
