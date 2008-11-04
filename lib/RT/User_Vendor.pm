@@ -34,10 +34,8 @@
 
 no warnings qw(redefine);
 use strict;
-use DBI;
-use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
-use Net::LDAP::Util qw(ldap_error_name);
-use Net::LDAP::Filter;
+use RT::Authen::ExternalAuth::LDAP;
+use RT::Authen::ExternalAuth::DBI;
 
 # We only need Net::SSLeay if one of our external services requires 
 # OpenSSL because it plans to use SSL or TLS to encrypt connections
@@ -66,227 +64,17 @@ sub IsExternalPassword {
         # And then act accordingly depending on what type of service it is.
         # Right now, there is only code for DBI and LDAP services
         if ($config->{'type'} eq 'db') {    
-            my $db_table        = $config->{'table'};
-            my $db_u_field      = $config->{'u_field'};
-            my $db_p_field 	    = $config->{'p_field'};
-            my $db_p_enc_pkg    = $config->{'p_enc_pkg'};
-            my $db_p_enc_sub    = $config->{'p_enc_sub'};
-
-            # Set SQL query and bind parameters
-            my $query = "SELECT $db_u_field,$db_p_field FROM $db_table WHERE $db_u_field=?";
-            my @params = ($name_to_auth);
-            
-            # Uncomment this to trace basic DBI information and drop it in a log for debugging
-            # DBI->trace(1,'/tmp/dbi.log');
-
-            # Get DBI handle object (DBH), do SQL query, kill DBH
-            my $dbh = $self->_GetBoundDBIObj($config);
-            my $results_hashref = $dbh->selectall_hashref($query,$db_u_field,{},@params);
-            $dbh->disconnect();
-
-            my $num_users_returned = scalar keys %$results_hashref;
-            if($num_users_returned != 1) { # FAIL
-                # FAIL because more than one user returned. Users MUST be unique! 
-                if ((scalar keys %$results_hashref) > 1) {
-                    $RT::Logger->info(  $service,
-                                        "AUTH FAILED",
-                                        $name_to_auth,
-                                        "More than one user with that username!");
-                }
-
-                # FAIL because no users returned. Users MUST exist! 
-                if ((scalar keys %$results_hashref) < 1) {
-                    $RT::Logger->info(  $service,
-                                        "AUTH FAILED",
-                                        $name_to_auth,
-                                        "User not found in database!");
-                }
-  
-        	    # Drop out to next external authentication service
-        	    next;
-            }
-            
-            # Get the user's password from the database query result
-            my $pass_from_db = $results_hashref->{$name_to_auth}->{$db_p_field};        
-
-            # This is the encryption package & subroutine passed in by the config file
-            $RT::Logger->debug( "Encryption Package:",
-                                $db_p_enc_pkg);
-            $RT::Logger->debug( "Encryption Subroutine:",
-                                $db_p_enc_sub);
-
-            # Use config info to auto-load the perl package needed for password encryption
-            # I know it uses a string eval - but I don't think there's a better way to do this
-            # Jump to next external authentication service on failure
-            eval "require $db_p_enc_pkg" or 
-                $RT::Logger->error("AUTH FAILED, Couldn't Load Password Encryption Package. Error: $@") && next;
-            
-            my $encrypt = $db_p_enc_pkg->can($db_p_enc_sub);
-            if (defined($encrypt)) {
-                # If the package given can perform the subroutine given, then use it to compare the
-                # password given with the password pulled from the database.
-                # Jump to the next external authentication service if they don't match
-                if(${encrypt}->($pass_to_auth) ne $pass_from_db){
-                    $RT::Logger->info(  $service,
-                                        "AUTH FAILED", 
-                                        $name_to_auth, 
-                                        "Password Incorrect");
-                    next;
-                }
-            } else {
-                # If the encryption package can't perform the request subroutine,
-                # dump an error and jump to the next external authentication service.
-                $RT::Logger->error($service,
-                                    "AUTH FAILED",
-                                    "The encryption package you gave me (",
-                                    $db_p_enc_pkg,
-                                    ") does not support the encryption method you specified (",
-                                    $db_p_enc_sub,
-                                    ")");
-                    next;
-            }
-            
-            # Any other checks you want to add? Add them here.
-
-            # If we've survived to this point, we're good.
-            $RT::Logger->info(  (caller(0))[3], 
-                                "External Auth OK (",
-                                $service,
-                                "):", 
-                                $name_to_auth);
-            return 1;
+            my $success = RT::Authen::ExternalAuth::DBI->getAuth($service,$name_to_auth,$pass_to_auth);
+            return 1 if $success;
+            next;
             
         } elsif ($config->{'type'} eq 'ldap') {
-            my $base            = $config->{'base'};
-            my $filter          = $config->{'filter'};
-            my $group           = $config->{'group'};
-            my $group_attr      = $config->{'group_attr'};
-            my $attr_map        = $config->{'attr_map'};
-            my @attrs           = ('dn');
-
-            # Empty parentheses as filters cause Net::LDAP to barf.
-            # We take care of this by using Net::LDAP::Filter, but
-            # there's no harm in fixing this right now.
-            if ($filter eq "()") { undef($filter) };
-
-            # Now let's get connected
-            my $ldap = $self->_GetBoundLdapObj($config);
-            next unless ($ldap);
-
-            $filter = Net::LDAP::Filter->new(   '(&(' . 
-                                                $attr_map->{'Name'} . 
-                                                '=' . 
-                                                $self->Name . 
-                                                ')' . 
-                                                $filter . 
-                                                ')'
-                                            );
-
-            $RT::Logger->debug( "LDAP Search === ",
-                                "Base:",
-                                $base,
-                                "== Filter:", 
-                                $filter->as_string,
-                                "== Attrs:", 
-                                join(',',@attrs));
-
-            my $ldap_msg = $ldap->search(   base   => $base,
-                                            filter => $filter,
-                                            attrs  => \@attrs);
-
-            unless ($ldap_msg->code == LDAP_SUCCESS || $ldap_msg->code == LDAP_PARTIAL_RESULTS) {
-                $RT::Logger->debug( "search for", 
-                                    $filter->as_string, 
-                                    "failed:", 
-                                    ldap_error_name($ldap_msg->code), 
-                                    $ldap_msg->code);
-                # Didn't even get a partial result - jump straight to the next external auth service
-                next;
-            }
-
-            unless ($ldap_msg->count == 1) {
-                $RT::Logger->info(  $service,
-                                    "AUTH FAILED:", 
-                                    $self->Name,
-                                    "User not found or more than one user found");
-                # We got no user, or too many users.. jump straight to the next external auth service
-                next;
-            }
-
-            my $ldap_dn = $ldap_msg->first_entry->dn;
-            $RT::Logger->debug( "Found LDAP DN:", 
-                                $ldap_dn);
-
-            # THIS bind determines success or failure on the password.
-            $ldap_msg = $ldap->bind($ldap_dn, password => $pass_to_auth);
-
-            unless ($ldap_msg->code == LDAP_SUCCESS) {
-                $RT::Logger->info(  $service,
-                                    "AUTH FAILED", 
-                                    $self->Name, 
-                                    "(can't bind:", 
-                                    ldap_error_name($ldap_msg->code), 
-                                    $ldap_msg->code, 
-                                    ")");
-                # Could not bind to the LDAP server as the user we found with the password
-                # we were given, therefore the password must be wrong so we fail and
-                # jump straight to the next external auth service
-                next;
-            }
-
-            # The user is authenticated ok, but is there an LDAP Group to check?
-            if ($group) {
-                # If we've been asked to check a group...
-                $filter = Net::LDAP::Filter->new("(${group_attr}=${ldap_dn})");
-                
-                $RT::Logger->debug( "LDAP Search === ",
-                                    "Base:",
-                                    $base,
-                                    "== Filter:", 
-                                    $filter->as_string,
-                                    "== Attrs:", 
-                                    join(',',@attrs));
-                
-                $ldap_msg = $ldap->search(  base   => $group,
-                                            filter => $filter,
-                                            attrs  => \@attrs,
-                                            scope  => 'base');
-
-                # And the user isn't a member:
-                unless ($ldap_msg->code == LDAP_SUCCESS || 
-                        $ldap_msg->code == LDAP_PARTIAL_RESULTS) {
-                    $RT::Logger->critical(  "Search for", 
-                                            $filter->as_string, 
-                                            "failed:",
-                                            ldap_error_name($ldap_msg->code), 
-                                            $ldap_msg->code);
-
-                    # Fail auth - jump to next external auth service
-                    next;
-                }
-
-                unless ($ldap_msg->count == 1) {
-                    $RT::Logger->info(  $service,
-                                        "AUTH FAILED:", 
-                                        $self->Name);
-                                        
-                    # Fail auth - jump to next external auth service
-                    next;
-                }
-            }
-            
-            # Any other checks you want to add? Add them here.
-
-            # If we've survived to this point, we're good.
-            $RT::Logger->info(  (caller(0))[3], 
-                                "External Auth OK (",
-                                $service,
-                                "):", 
-                                $name_to_auth);
-            return 1;
-        
+            my $success = RT::Authen::ExternalAuth::LDAP->getAuth($service,$name_to_auth,$pass_to_auth);
+            return 1 if $success;
+            next;
+                    
         } else {
-            $RT::Logger->error("Invalid type specification in config",$service);
+            $RT::Logger->error("Invalid type specification in config for service:",$service);
         }
     } 
 
@@ -418,9 +206,9 @@ sub CanonicalizeUserInfo {
                                 $rt_attr);
             next unless defined($args->{$rt_attr});
                                 
-            # Else, use it as a key for LookupExternalUserInfo    
+            # Else, use it as a key for GetUserInfoHash    
             ($found, %params) = 
-                $self->LookupExternalUserInfo($config->{'attr_map'}->{$rt_attr},$args->{$rt_attr});
+                $self->GetUserInfoHash($service,$config->{'attr_map'}->{$rt_attr},$args->{$rt_attr});
          
             # Don't Check any more attributes
             last if $found;
@@ -456,248 +244,68 @@ sub CanonicalizeUserInfo {
 
 # {{{ sub LookupExternalUserInfo
 
-=head2 LookupExternalUserInfo KEY VALUE [BASE_DN]
+=head2 GetUserInfoHash SERVICE KEY VALUE
 
-LookupExternalUserInfo takes a key/value pair, looks it up externally, 
-and returns a params hash containing all attrs listed in the source's 
-attr_map, suitable for creating an RT::User object.
+LookupExternalUserInfo takes a key/value pair and an external service
+to look it up in; looks it up and returns a params hash containing 
+all attrs listed in the source's attr_map, suitable for creating 
+an RT::User object.
 
 Returns a tuple, ($found, %params)
 
 =cut
 
-sub LookupExternalUserInfo {
+sub GetUserInfoHash {
     my $self = shift;
-    my ($key, $value) = @_;
+    my ($service,$key, $value) = @_;
     
-    # Set up worst case return info
+    # Haven't got anything yet..
     my $found = 0;
     my %params = (Name         => undef,
                   EmailAddress => undef,
                   RealName     => undef);
     
-    # Get the list of information services in priority order from the SiteConfig
-    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : undef;
-    foreach my $service (@info_services) {
-        # Get the full configuration for the service in question
-        my $config = $RT::ExternalSettings->{$service};
-        
-        my $valid = 0;
-        my ($attr_key, $attr_value);
-        my $attr_map = $config->{'attr_map'};
-        while (($attr_key, $attr_value) = each %$attr_map) {
-            $valid = 1 if ($key eq $attr_value);
-        }
-        unless ($valid){
-            $RT::Logger->debug( $key,
-                                "is not valid attribute key (",
-                                $service,
-                                ") - Trying Next Service");
-            next;
-        }
-        
-        # Use an if/elsif structure to do a lookup with any custom code needed 
-        # for any given type of external service, or die if no code exists for
-        # the service requested.
-        
-        if($config->{'type'} eq 'ldap'){
-            # Figure out what's what
-            my $base            = $config->{'base'};
-            my $filter          = $config->{'filter'};
+    # Get the full configuration for the service in question
+    my $config = $RT::ExternalSettings->{$service};
+    
+    # Check to see that the key being asked for is defined in the config's attr_map
+    my $valid = 0;
+    my ($attr_key, $attr_value);
+    my $attr_map = $config->{'attr_map'};
+    while (($attr_key, $attr_value) = each %$attr_map) {
+        $valid = 1 if ($key eq $attr_value);
+    }
+    unless ($valid){
+        $RT::Logger->debug( $key,
+                            "is not valid attribute key (",
+                            $service,
+                            ")");
+        return ($found, %params);
+    }
+    
+    # Use an if/elsif structure to do a lookup with any custom code needed 
+    # for any given type of external service, or die if no code exists for
+    # the service requested.
+    
+    if($config->{'type'} eq 'ldap'){    
+        ($found, %params) = RT::Authen::ExternalAuth::LDAP->CanonicalizeUserInfo($service,$key,$value);
+    } elsif ($config->{'type'} eq 'db') {
+        ($found, %params) = RT::Authen::ExternalAuth::DBI->CanonicalizeUserInfo($service,$key,$value);
+    } else {
+        $RT::Logger->debug( (caller(0))[3],
+                            "does not consider",
+                            $service,
+                            "a valid information service");
+    }
 
-            # Get the list of unique attrs we need
-            my @attrs = values(%{$config->{'attr_map'}});
-
-            # This is a bit confusing and probably broken. Something to revisit..
-            my $filter_addition = ($key && $value) ? "(". $key . "=$value)" : "";
-            if(defined($filter) && ($filter ne "()")) {
-                $filter = Net::LDAP::Filter->new(   "(&" . 
-                                                    $filter . 
-                                                    $filter_addition . 
-                                                    ")"
-                                                ); 
-            } else {
-                $RT::Logger->debug( "LDAP Filter invalid or not present.");
-            }
-            
-            unless ($base) {
-                $RT::Logger->critical(  (caller(0))[3],
-                                        "No base given");
-                # Drop out to the next external information service
-                next;
-            }
-            
-            # Get a Net::LDAP object based on the config we provide
-            my $ldap = $self->_GetBoundLdapObj($config);
-
-            # Jump to the next external information service if we can't get one, 
-            # errors should be logged by _GetBoundLdapObj so we don't have to.
-            next unless ($ldap);
-
-            # Do a search for them in LDAP
-            $RT::Logger->debug( "LDAP Search === ",
-                                "Base:",
-                                $base,
-                                "== Filter:", 
-                                $filter->as_string,
-                                "== Attrs:", 
-                                join(',',@attrs));
- 
-            my $ldap_msg = $ldap->search(base   => $base,
-                                         filter => $filter,
-                                         attrs  => \@attrs);
-
-            # If we didn't get at LEAST a partial result, just die now.
-            if ($ldap_msg->code != LDAP_SUCCESS and 
-                $ldap_msg->code != LDAP_PARTIAL_RESULTS) {
-                $RT::Logger->critical(  (caller(0))[3],
-                                        ": Search for ",
-                                        $filter->as_string,
-                                        " failed: ",
-                                        ldap_error_name($ldap_msg->code), 
-                                        $ldap_msg->code);
-                # $found remains as 0
-                
-                # Drop out to the next external information service
-                $ldap_msg = $ldap->unbind();
-                if ($ldap_msg->code != LDAP_SUCCESS) {
-                    $RT::Logger->critical(  (caller(0))[3],
-                                            ": Could not unbind: ", 
-                                            ldap_error_name($ldap_msg->code), 
-                                            $ldap_msg->code);
-                }
-                undef $ldap;
-                undef $ldap_msg;
-                next;
-              
-            } else {
-                # If there's only one match, we're good; more than one and
-                # we don't know which is the right one so we skip it.
-                if ($ldap_msg->count == 1) {
-                    my $entry = $ldap_msg->first_entry();
-                    foreach my $key (keys(%{$config->{'attr_map'}})) {
-                        if ($RT::LdapAttrMap->{$key} eq 'dn') {
-                            $params{$key} = $entry->dn();
-                        } else {
-                            $params{$key} = 
-                              ($entry->get_value($config->{'attr_map'}->{$key}))[0];
-                        }
-                    }
-                    $found = 1;
-                } else {
-                    # Drop out to the next external information service
-                    $ldap_msg = $ldap->unbind();
-                    if ($ldap_msg->code != LDAP_SUCCESS) {
-                        $RT::Logger->critical(  (caller(0))[3],
-                                                ": Could not unbind: ", 
-                                                ldap_error_name($ldap_msg->code), 
-                                                $ldap_msg->code);
-                    }
-                    undef $ldap;
-                    undef $ldap_msg;
-                    next;
-                }
-            }
-            $ldap_msg = $ldap->unbind();
-            if ($ldap_msg->code != LDAP_SUCCESS) {
-                $RT::Logger->critical(  (caller(0))[3],
-                                        ": Could not unbind: ", 
-                                        ldap_error_name($ldap_msg->code), 
-                                        $ldap_msg->code);
-            }
-
-            undef $ldap;
-            undef $ldap_msg;
-            last if $found;
-        
-        } elsif ($config->{'type'} eq 'db') {
-            # Figure out what's what
-            my $table      = $config->{'table'};
-
-            unless ($table) {
-                $RT::Logger->critical(  (caller(0))[3],
-                                        "No table given");
-                # Drop out to the next external information service
-                next;
-            }
-
-            unless ($key && $value){
-                $RT::Logger->critical(  (caller(0))[3],
-                                        " Nothing to look-up given");
-                # Drop out to the next external information service
-                next;
-            }
-            
-            # "where" refers to WHERE section of SQL query
-            my ($where_key,$where_value) = ("@{[ $key ]}",$value);
-
-            # Get the list of unique attrs we need
-            my %db_attrs = map {$_ => 1} values(%{$config->{'attr_map'}});
-            my @attrs = keys(%db_attrs);
-            my $fields = join(',',@attrs);
-            my $query = "SELECT $fields FROM $table WHERE $where_key=?";
-            my @bind_params = ($where_value);
-
-            # Uncomment this to trace basic DBI throughput in a log
-            # DBI->trace(1,'/tmp/dbi.log');
-            my $dbh = $self->_GetBoundDBIObj($config);
-            my $results_hashref = $dbh->selectall_hashref($query,$key,{},@bind_params);
-            $dbh->disconnect();
-
-            if ((scalar keys %$results_hashref) != 1) {
-                # If returned users <> 1, we have no single unique user, so prepare to die
-                my $death_msg;
-                
-        	    if ((scalar keys %$results_hashref) == 0) {
-                    # If no user...
-        	        $death_msg = "No User Found in External Database!";
-                } else {
-                    # If more than one user...
-                    $death_msg = "More than one user found in External Database with that unique identifier!";
-                }
-
-                # Log the death
-                $RT::Logger->info(  (caller(0))[3],
-                                    "INFO CHECK FAILED",
-                                    "Key: $key",
-                                    "Value: $value",
-                                    $death_msg);
-                
-                # $found remains as 0
-                
-                # Drop out to next external information service
-                next;
-            }
-
-            # We haven't dropped out, so DB search must have succeeded with 
-            # exactly 1 result. Log it, get the result and set $found to 1
-            my $result = $results_hashref->{$value};
-         
-            # Use the result to populate %params for every key we're given in the config
-            foreach my $key (keys(%{$config->{'attr_map'}})) {
-                $params{$key} = ($result->{$config->{'attr_map'}->{$key}})[0];
-            }
-            
-            $found = 1;
-            last;
-
-        } else {
-            $RT::Logger->debug( (caller(0))[3],
-                                "does not consider",
-                                $service,
-                                "a valid information service");
-        }
-        
-        # If our external service found a user, then drop out
-        # We don't want to check any lower-priority info services.
-        last if $found;
-    }    
 
     # Why on earth do we return the same RealName, just quoted?!
     # Seconded by Mike Peachey - I'd like to know that too!!
     # Sod it, until it breaks something, I'm removing this line forever!
     # $params{'RealName'} = "\"$params{'RealName'}\"";
     
+    
+    # Log the info found and return it
     $RT::Logger->info(  (caller(0))[3],
                         ": Returning: ",
                         join(", ", map {sprintf("%s: %s", $_, $params{$_})}
@@ -1005,98 +613,6 @@ sub UpdateFromExternal {
     return ($updated, $msg);
 }
 
-# {{{ sub _GetBoundLdapObj
 
-sub _GetBoundLdapObj {
-    my $self = shift;
-
-    # Config as hashref
-    my $config = shift;
-
-    # Figure out what's what
-    my $ldap_server     = $config->{'server'};
-    my $ldap_user       = $config->{'user'};
-    my $ldap_pass       = $config->{'pass'};
-    my $ldap_tls        = $config->{'tls'};
-    my $ldap_ssl_ver    = $config->{'ssl_version'};
-    my $ldap_args       = $config->{'net_ldap_args'};
-    
-    
-    
-    my $ldap = new Net::LDAP($ldap_server, @$ldap_args);
-    
-    unless ($ldap) {
-        $RT::Logger->critical(  (caller(0))[3],
-                                ": Cannot connect to",
-                                $ldap_server);
-        return undef;
-    }
-
-    if ($ldap_tls) {
-        $Net::SSLeay::ssl_version = $ldap_ssl_ver;
-        # Thanks to David Narayan for the fault tolerance bits
-        eval { $ldap->start_tls; };
-        if ($@) {
-            $RT::Logger->critical(  (caller(0))[3], 
-                                    "Can't start TLS: ",
-                                    $@);
-            return;
-        }
-
-    }
-
-    my $msg = undef;
-
-    # Can't decide whether to add a little more error checking here..
-    # Perhaps, if user && pass, else dont pass a pass etc..
-    if ($ldap_user) {
-        $msg = $ldap->bind($ldap_user, password => $ldap_pass);
-    } else {
-        $msg = $ldap->bind;
-    }
-
-    unless ($msg->code == LDAP_SUCCESS) {
-        $RT::Logger->critical(  (caller(0))[3], 
-                                "Can't bind:", 
-                                ldap_error_name($msg->code), 
-                                $msg->code);
-        return undef;
-    } else {
-        return $ldap;
-    }
-}
-
-# }}}
-
-# {{{ sub _GetBoundDBIObj
-
-sub _GetBoundDBIObj {
-    my $self = shift;
-    
-    # Config as hashref.
-    my $config = shift;
-
-    # Extract the relevant information from the config.
-    my $db_server     = $config->{'server'};
-    my $db_user       = $config->{'user'};
-    my $db_pass       = $config->{'pass'};
-    my $db_database   = $config->{'database'};
-    my $db_port       = $config->{'port'};
-    my $dbi_driver    = $config->{'dbi_driver'};
-
-    # Use config to create a DSN line for the DBI connection
-    my $dsn = "dbi:$dbi_driver:database=$db_database;host=$db_server;port=$db_port";
-
-    # Now let's get connected
-    my $dbh = DBI->connect($dsn, $db_user, $db_pass,{RaiseError => 1, AutoCommit => 0 })
-            or die $DBI::errstr;
-
-    # If we didn't die, return the DBI object handle 
-    # and hope it's treated sensibly and correctly 
-    # destroyed by the calling code
-    return $dbh;
-}
-
-# }}}
 
 1;
