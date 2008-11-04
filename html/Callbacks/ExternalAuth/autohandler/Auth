@@ -52,11 +52,11 @@ unless ($session{'CurrentUser'}) {
             if ($password_validated) {
                     ### If there were a standard param to check for whether or not we
                     ### should autocreate authenticated users, we'd check it here.
-                    my ($val, $msg) = $UserObj->Create(
-                      %{ ref RT->Config->Get('AutoCreate') ? RT->Config->Get('AutoCreate') : {} },
-                      Name   => $user,
-                      Gecos  => $user,
-                    );
+                    my ($val, $msg) = 
+                      $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
+                                       Name   => $user,
+                                       Gecos  => $user,
+                                      );
                     unless ($val) {
                         $RT::Logger->error( "Couldn't create user $user: $msg" );
                         return;
