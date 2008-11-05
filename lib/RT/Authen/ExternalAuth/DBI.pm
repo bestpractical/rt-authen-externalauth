@@ -102,7 +102,7 @@ sub GetAuth {
     return 1;   
 }
 
-sub CanonicalizeUSerInfo {
+sub CanonicalizeUserInfo {
     
     my ($service, $key, $value) = @_;
 

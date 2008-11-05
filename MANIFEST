@@ -11,6 +11,8 @@ inc/Module/Install/RTx.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/RT/Authen/ExternalAuth.pm
+lib/RT/Authen/ExternalAuth/DBI.pm
+lib/RT/Authen/ExternalAuth/LDAP.pm
 lib/RT/User_Vendor.pm
 LICENSE
 Makefile.PL
