@@ -1,7 +1,7 @@
 package RT::Authen::ExternalAuth::DBI;
 use DBI;
 
-sub getAuth {
+sub GetAuth {
 
     my ($service, $username, $password) = @_;
     
@@ -102,7 +102,7 @@ sub getAuth {
     return 1;   
 }
 
-sub FindUserThenReturnInfo {
+sub CanonicalizeUSerInfo {
     
     my ($service, $key, $value) = @_;
 
@@ -184,6 +184,128 @@ sub FindUserThenReturnInfo {
     $found = 1;
   
     return ($found, %params);
+}
+
+sub UserExists {
+    
+    my ($username,$service) = @_;
+    my $config              = $RT::ExternalSettings->{$service};
+    my $table    	        = $config->{'table'};
+    my $u_field	            = $config->{'u_field'};
+    my $query               = "SELECT $u_field FROM $table WHERE $u_field=?";
+    my @bind_params         = ($username);
+
+    # Uncomment this to do a basic trace on DBI information and log it
+    # DBI->trace(1,'/tmp/dbi.log');
+    
+    # Get DBI Object, do the query, disconnect
+    my $dbh = $self->_GetBoundDBIObj($config);
+    my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
+    $dbh->disconnect();
+
+    my $num_of_results = scalar keys %$results_hashref;
+        
+    if ($num_of_results > 1) { 
+        # If more than one result returned, die because we the username field should be unique!
+        $RT::Logger->debug( "Disable Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "More than one user with that username!");
+        return 0;
+    } elsif ($num_of_results < 1) { 
+        # If 0 or negative integer, no user found or major failure
+        $RT::Logger->debug( "Disable Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "User not found");   
+        return 0; 
+    }
+    
+    # Number of results is exactly one, so we found the user we were looking for
+    return 1;            
+}
+
+sub UserDisabled {
+
+    my ($username,$service) = @_;
+    
+    # FIRST, check that the user exists in the DBI service
+    unless UserExists($username,$service) {
+        $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not disabled for the purposes of disable checking";
+        return 0;
+    }
+    
+    # Get the necessary config info
+    my $config              = $RT::ExternalSettings->{$service};
+    my $table    	        = $config->{'table'};
+    my $u_field	            = $config->{'u_field'};
+    my $disable_field       = $config->{'d_field'};
+    my $disable_values_list = $config->{'d_values'};
+
+    unless ($disable_field) {
+        # If we don't know how to check for disabled users, consider them all enabled.
+        $RT::Logger->debug("No d_field specified for this DBI service (",
+                            $service,
+                            "), so considering all users enabled");
+        return 0;
+    } 
+    
+    my $query = "SELECT $u_field,$disable_field FROM $table WHERE $u_field=?";
+    my @bind_params = ($username);
+
+    # Uncomment this to do a basic trace on DBI information and log it
+    # DBI->trace(1,'/tmp/dbi.log');
+    
+    # Get DBI Object, do the query, disconnect
+    my $dbh = $self->_GetBoundDBIObj($config);
+    my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
+    $dbh->disconnect();
+
+    my $num_of_results = scalar keys %$results_hashref;
+        
+    if ($num_of_results > 1) { 
+        # If more than one result returned, die because we the username field should be unique!
+        $RT::Logger->debug( "Disable Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "More than one user with that username! - Assuming not disabled");
+        # Drop out to next service for an info check
+        return 0;
+    } elsif ($num_of_results < 1) { 
+        # If 0 or negative integer, no user found or major failure
+        $RT::Logger->debug( "Disable Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "User not found - Assuming not disabled");   
+        # Drop out to next service for an info check
+        return 0;             
+    } else { 
+        # otherwise all should be well
+        
+        # $user_db_disable_value = The value for "disabled" returned from the DB
+        my $user_db_disable_value = $results_hashref->{$username}->{$disable_field};
+        
+        # For each of the values in the (list of values that we consider to mean the user is disabled)..
+        foreach my $disable_value (@{$disable_values_list}){
+            $RT::Logger->debug( "DB Disable Check:", 
+                                "User's Val is $user_db_disable_value,",
+                                "Checking against: $disable_value");
+            
+            # If the value from the DB matches a value from the list, the user is disabled.
+            if ($user_db_disable_value eq $disable_value) {
+                return 1;
+            }
+        }
+        
+        # If we've not returned yet, the user can't be disabled
+        return 0;
+    }
+    $RT::Logger->crit("It is seriously not possible to run this code.. what the hell did you do?!");
+    return 0;
 }
 
 # {{{ sub _GetBoundDBIObj

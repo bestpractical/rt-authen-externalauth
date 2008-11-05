@@ -36,22 +36,23 @@ unless ($session{'CurrentUser'}) {
 
         # Unless we have loaded a valid user with a UserID
         unless ($session{'CurrentUser'}->Id) {
-            # Start with a new SystemUser
-            my $UserObj = RT::User->new($RT::SystemUser);
-            # Set the user's name to the one we were given
-            my ($val, $msg) = $UserObj->SetName($user);
-
-            # If a password was given on the login page, validate it
-            if (defined($pass)) {
-                $password_validated = $UserObj->IsPassword($pass);
+            # Check if user exists externally - autocreate user if it does
+            my $user_exists_externally = 0;
+            my @auth_services = @$RT::ExternalAuthPriority;
+            foreach my $service (@auth_services) {
+                my $config = $RT::Settings->{$service};
+                if ($config->{'type'} eq 'db') {    
+                    $user_exists_externally = RT::Authen::ExternalAuth::DBI->UserExists($service,$user);
+                    last if $user_exists_externally;
+                } elsif ($config->{'type'} eq 'ldap') {
+                    $user_exists_externally = RT::Authen::ExternalAuth::LDAP->UserExists($service,$user);
+                    last if $user_exists_externally;
+                } else {
+                    $RT::Logger->error("Invalid type specification in config for service:",$service);
+                }
             }
             
-            # If the password was validated successfully
-            # start the autocreation process to create the user
-            # permanently in RT
-            if ($password_validated) {
-                    ### If there were a standard param to check for whether or not we
-                    ### should autocreate authenticated users, we'd check it here.
+            if($user_exists_externally){
                     my ($val, $msg) = 
                       $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
                                        Name   => $user,
@@ -69,12 +70,21 @@ unless ($session{'CurrentUser'}) {
                     $user_autocreated = 1;
             }
 
-            # If we autocreated a user, then load the user as the CurrentUser in $session
-            # To RT, this means we have a valid, authenticated user
-            if ($UserObj->Id) {
-                my ($ret, $msg) = $session{'CurrentUser'}->Load($user);
-                unless ($ret) {
-                    $RT::Logger->error("Couldn't load user $user: $msg");
+            my ($val, $msg) = $UserObj->SetName($user);
+
+            # If a password was given on the login page, validate it
+            if (defined($pass)) {
+                $password_validated = $UserObj->IsPassword($pass);
+            }
+            
+            if($password_validated) {
+                # If we autocreated a user, then load the user as the CurrentUser in $session
+                # To RT, this means we have a valid, authenticated user
+                if ($UserObj->Id) {
+                    my ($ret, $msg) = $session{'CurrentUser'}->Load($user);
+                    unless ($ret) {
+                        $RT::Logger->error("Couldn't load user $user: $msg");
+                    }
                 }
             }
         }

@@ -3,7 +3,7 @@ use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
 use Net::LDAP::Util qw(ldap_error_name);
 use Net::LDAP::Filter;
 
-sub getAuth {
+sub GetAuth {
     
     my ($service, $username, $password) = @_;
     
@@ -264,6 +264,153 @@ sub CanonicalizeUserInfo {
     return ($found, %params);
 }
 
+sub UserExists {
+    
+    my ($username,$service) = @_;
+    my $config              = $RT::ExternalSettings->{$service};
+    
+    my $base                = $config->{'base'};
+    my $filter              = $config->{'filter'};
+
+    # While LDAP filters must be surrounded by parentheses, an empty set
+    # of parentheses is an invalid filter and will cause failure
+    # This shouldn't matter since we are now using Net::LDAP::Filter below,
+    # but there's no harm in doing this to be sure
+    if ($filter eq "()") { undef($filter) };
+
+    if (defined($config->{'attr_map'}->{'Name'})) {
+        # Construct the complex filter
+        $filter = Net::LDAP::Filter->new(           '(&' . 
+                                                    $filter . 
+                                                    '(' . 
+                                                    $config->{'attr_map'}->{'Name'} . 
+                                                    '=' . 
+                                                    $username . 
+                                                    '))'
+                                        );
+    }
+
+    my $ldap = $self->_GetBoundLdapObj($config);
+    next unless $ldap;
+
+    my @attrs = values(%{$config->{'attr_map'}});
+
+    # Check that the user exists in the LDAP service
+    $RT::Logger->debug( "LDAP Search === ",
+                        "Base:",
+                        $base,
+                        "== Filter:", 
+                        $filter->as_string,
+                        "== Attrs:", 
+                        join(',',@attrs));
+    
+    my $user_found = $ldap->search( base    => $base,
+                                    filter  => $filter,
+                                    attrs   => \@attrs);
+
+    if($user_found->count < 1) {
+        # If 0 or negative integer, no user found or major failure
+        $RT::Logger->debug( "User Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "User not found");   
+        return 0;  
+    } elsif ($user_found->count > 1) {
+        # If more than one result returned, die because we the username field should be unique!
+        $RT::Logger->debug( "User Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "More than one user with that username!");
+        return 0;
+    }
+    undef $user_found;
+    
+    # If we havent returned now, there must be a valid user.
+    return 1;
+}
+
+sub UserDisabled {
+
+    my ($username,$service) = @_;
+
+    # FIRST, check that the user exists in the LDAP service
+    unless UserExists($username,$service) {
+        $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not disabled for the purposes of disable checking";
+        return 0;
+    }
+    
+    my $config          = $RT::ExternalSettings->{$service};
+    my $base            = $config->{'base'};
+    my $filter          = $config->{'filter'};
+    my $d_filter        = $config->{'d_filter'};
+    my $search_filter;
+
+    # While LDAP filters must be surrounded by parentheses, an empty set
+    # of parentheses is an invalid filter and will cause failure
+    # This shouldn't matter since we are now using Net::LDAP::Filter below,
+    # but there's no harm in doing this to be sure
+    if ($filter eq "()") { undef($filter) };
+    if ($d_filter eq "()") { undef($d_filter) };
+
+    unless ($d_filter) {
+        # If we don't know how to check for disabled users, consider them all enabled.
+        $RT::Logger->debug("No d_filter specified for this LDAP service (",
+                            $service,
+                            "), so considering all users enabled");
+        return 0;
+    }
+
+    if (defined($config->{'attr_map'}->{'Name'})) {
+        # Construct the complex filter
+        $search_filter = Net::LDAP::Filter->new(   '(&' . 
+                                                    $filter . 
+                                                    $d_filter . 
+                                                    '(' . 
+                                                    $config->{'attr_map'}->{'Name'} . 
+                                                    '=' . 
+                                                    $username . 
+                                                    '))'
+                                                );
+    } else {
+        $RT::Logger->debug("You haven't specified an LDAP attribute to match the RT \"Name\" attribute for this service (",
+                            $service,
+                            "), so it's impossible look up the disabled status of this user (",
+                            $username,
+                            ") so I'm just going to assume the user is not disabled");
+        return 0;
+        
+    }
+
+    my $ldap = $self->_GetBoundLdapObj($config);
+    next unless $ldap;
+
+    # We only need the UID for confirmation now, 
+    # the other information would waste time and bandwidth
+    @attrs = ('uid'); 
+    
+    $RT::Logger->debug( "LDAP Search === ",
+                        "Base:",
+                        $base,
+                        "== Filter:", 
+                        $search_filter->as_string,
+                        "== Attrs:", 
+                        join(',',@attrs));
+          
+    my $disabled_users = $ldap->search(base   => $base, 
+                                       filter => $search_filter, 
+                                       attrs  => \@attrs);
+    # If ANY results are returned, 
+    # we are going to assume the user should be disabled
+    if ($disabled_users->count) {
+        undef $disabled_users;
+        return 1;
+    } else {
+        undef $disabled_users;
+        return 0;
+    }
+}
 # {{{ sub _GetBoundLdapObj
 
 sub _GetBoundLdapObj {

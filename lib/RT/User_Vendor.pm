@@ -1,36 +1,9 @@
-### User_Local.pm overlay for External Service authentication and information
-###
-### CREDITS
+### User_Vendor.pm
+# Overlay for RT::User object as part of RT::Authen::ExternalAuth
 #
-# Based on User_Local.pm for LDAP created by JimMeyer and found at:
+# Originally based on User_Local.pm for LDAP created by Jim Meyer (purp@acm.org) and found at:
 #   http://wiki.bestpractical.com/view/LdapUserLocalOverlay
-#
-# His Credits:
-#
-#   IsLDAPPassword() based on implementation of IsPassword() found at:
-#
-#   http://www.justatheory.com/computers/programming/perl/rt/User_Local.pm.ldap
-#
-#   Author's credits:
-#   Modification Originally by Marcelo Bartsch <bartschm_cl@hotmail.com>
-#   Update by Stewart James <stewart.james@vu.edu.au for rt3.
-#   Update by David Wheeler <david@kineticode.com> for TLS and 
-#      Group membership support.
-#
-#
-#   CaonicalizeEmailAddress(), CanonicalizeUserInfo(), and LookupExternalInfo()
-#   based on work by Phillip Cole (phillip d cole @ uk d coltgroup d com)
-#   found at:
-#
-#   http://wiki.bestpractical.com/view/AutoCreateAndCanonicalizeUserInfo
-#
-#   His credits:
-#     based on CurrentUser_Local.pm and much help from the mailing lists 
-#
-#   All integrated, refactored, and updated by Jim Meyer (purp@acm.org)
-#
-# Modified to provide alternate external services authentication and information for rt3
-# as part of RT::Authen::ExternalAuth by Mike Peachey (mike.peachey@jennic.com)
+
 
 no warnings qw(redefine);
 use strict;
@@ -64,12 +37,12 @@ sub IsExternalPassword {
         # And then act accordingly depending on what type of service it is.
         # Right now, there is only code for DBI and LDAP services
         if ($config->{'type'} eq 'db') {    
-            my $success = RT::Authen::ExternalAuth::DBI->getAuth($service,$name_to_auth,$pass_to_auth);
+            my $success = RT::Authen::ExternalAuth::DBI->GetAuth($service,$name_to_auth,$pass_to_auth);
             return 1 if $success;
             next;
             
         } elsif ($config->{'type'} eq 'ldap') {
-            my $success = RT::Authen::ExternalAuth::LDAP->getAuth($service,$name_to_auth,$pass_to_auth);
+            my $success = RT::Authen::ExternalAuth::LDAP->GetAuth($service,$name_to_auth,$pass_to_auth);
             return 1 if $success;
             next;
                     
@@ -179,8 +152,10 @@ sub CanonicalizeUserInfo {
     my $args = shift;
 
     my $found = 0;
-    my %params = ();
-
+    my %params = (Name         => undef,
+                  EmailAddress => undef,
+                  RealName     => undef);
+    
     $RT::Logger->debug( (caller(0))[3], 
                         "called by", 
                         caller, 
@@ -201,15 +176,52 @@ sub CanonicalizeUserInfo {
         
         # For each attr we've been told to canonicalize in the match list
         foreach my $rt_attr (@{$config->{'attr_match_list'}}) {
-            # Jump to the next attr if it's not an RT attr passed in $args
-            $RT::Logger->debug( "Attempting to use this canonicalization key:",
-                                $rt_attr);
-            next unless defined($args->{$rt_attr});
-                                
-            # Else, use it as a key for GetUserInfoHash    
-            ($found, %params) = 
-                $self->GetUserInfoHash($service,$config->{'attr_map'}->{$rt_attr},$args->{$rt_attr});
-         
+            # Jump to the next attr in $args if this one isn't in the attr_match_list
+            $RT::Logger->debug( "Attempting to use this canonicalization key:",$rt_attr);
+            unless defined($args->{$rt_attr}) {
+                $RT::Logger->debug("This attribute (",
+                                    $rt_attr,
+                                    ") is not defined in the attr_match_list for this service (",
+                                    $service,
+                                    ")");
+                next;
+            }
+                               
+            # Else, use it as a canonicalization key and lookup the user info    
+            my $key = $config->{'attr_map'}->{$rt_attr};
+            my $value = $args->{$rt_attr};
+            
+            # Check to see that the key being asked for is defined in the config's attr_map
+            my $valid = 0;
+            my ($attr_key, $attr_value);
+            my $attr_map = $config->{'attr_map'};
+            while (($attr_key, $attr_value) = each %$attr_map) {
+                $valid = 1 if ($key eq $attr_value);
+            }
+            unless ($valid){
+                $RT::Logger->debug( "This key (",
+                                    $key,
+                                    "is not a valid attribute key (",
+                                    $service,
+                                    ")");
+                next;
+            }
+            
+            # Use an if/elsif structure to do a lookup with any custom code needed 
+            # for any given type of external service, or die if no code exists for
+            # the service requested.
+            
+            if($config->{'type'} eq 'ldap'){    
+                ($found, %params) = RT::Authen::ExternalAuth::LDAP->CanonicalizeUserInfo($service,$key,$value);
+            } elsif ($config->{'type'} eq 'db') {
+                ($found, %params) = RT::Authen::ExternalAuth::DBI->CanonicalizeUserInfo($service,$key,$value);
+            } else {
+                $RT::Logger->debug( (caller(0))[3],
+                                    "does not consider",
+                                    $service,
+                                    "a valid information service");
+            }
+       
             # Don't Check any more attributes
             last if $found;
         }
@@ -242,85 +254,6 @@ sub CanonicalizeUserInfo {
 }
 # }}}
 
-# {{{ sub LookupExternalUserInfo
-
-=head2 GetUserInfoHash SERVICE KEY VALUE
-
-LookupExternalUserInfo takes a key/value pair and an external service
-to look it up in; looks it up and returns a params hash containing 
-all attrs listed in the source's attr_map, suitable for creating 
-an RT::User object.
-
-Returns a tuple, ($found, %params)
-
-=cut
-
-sub GetUserInfoHash {
-    my $self = shift;
-    my ($service,$key, $value) = @_;
-    
-    # Haven't got anything yet..
-    my $found = 0;
-    my %params = (Name         => undef,
-                  EmailAddress => undef,
-                  RealName     => undef);
-    
-    # Get the full configuration for the service in question
-    my $config = $RT::ExternalSettings->{$service};
-    
-    # Check to see that the key being asked for is defined in the config's attr_map
-    my $valid = 0;
-    my ($attr_key, $attr_value);
-    my $attr_map = $config->{'attr_map'};
-    while (($attr_key, $attr_value) = each %$attr_map) {
-        $valid = 1 if ($key eq $attr_value);
-    }
-    unless ($valid){
-        $RT::Logger->debug( $key,
-                            "is not valid attribute key (",
-                            $service,
-                            ")");
-        return ($found, %params);
-    }
-    
-    # Use an if/elsif structure to do a lookup with any custom code needed 
-    # for any given type of external service, or die if no code exists for
-    # the service requested.
-    
-    if($config->{'type'} eq 'ldap'){    
-        ($found, %params) = RT::Authen::ExternalAuth::LDAP->CanonicalizeUserInfo($service,$key,$value);
-    } elsif ($config->{'type'} eq 'db') {
-        ($found, %params) = RT::Authen::ExternalAuth::DBI->CanonicalizeUserInfo($service,$key,$value);
-    } else {
-        $RT::Logger->debug( (caller(0))[3],
-                            "does not consider",
-                            $service,
-                            "a valid information service");
-    }
-
-
-    # Why on earth do we return the same RealName, just quoted?!
-    # Seconded by Mike Peachey - I'd like to know that too!!
-    # Sod it, until it breaks something, I'm removing this line forever!
-    # $params{'RealName'} = "\"$params{'RealName'}\"";
-    
-    
-    # Log the info found and return it
-    $RT::Logger->info(  (caller(0))[3],
-                        ": Returning: ",
-                        join(", ", map {sprintf("%s: %s", $_, $params{$_})}
-                            sort(keys(%params))));
-    
-    $RT::Logger->debug( (caller(0))[3],
-                        "No user was found this time"
-                      ) if ($found == 0);
-
-    return ($found, %params);
-}
-
-# }}}
-
-
 sub UpdateFromExternal {
     my $self = shift;
 
@@ -329,7 +262,7 @@ sub UpdateFromExternal {
     my $updated = 0;
     my $msg = "User NOT updated";
     
-    my $name_to_update  	= $self->Name;
+    my $username  	= $self->Name;
     my $user_disabled 	    = 0;
     
     # Get the list of information service names requested by user.    
@@ -346,177 +279,37 @@ sub UpdateFromExternal {
         my $config = $RT::ExternalSettings->{$service};
         
         # If the config doesn't exist, don't bother doing anything, skip to next in list.
-        next unless defined($config);
+        unless defined($config) {
+            $RT::Logger->debug("You haven't defined a configuration for the service named \"",
+                                $service,
+                                "\" so I'm not going to try to get user information from it. Skipping...");
+            next;
+        }
         
         # If it's a DBI config:
         if ($config->{'type'} eq 'db') {
-            # Get the necessary config info
-            my $table    	        = $config->{'table'};
-    	    my $u_field	            = $config->{'u_field'};
-            my $disable_field       = $config->{'d_field'};
-            my $disable_values_list = $config->{'d_values'};
-
-            # Only lookup disable information from the DB if a disable_field has been set
-            if ($disable_field) { 
-                my $query = "SELECT $u_field,$disable_field FROM $table WHERE $u_field=?";
-        	    my @bind_params = ($name_to_update);
-
-                # Uncomment this to do a basic trace on DBI information and log it
-                # DBI->trace(1,'/tmp/dbi.log');
-                
-                # Get DBI Object, do the query, disconnect
-                my $dbh = $self->_GetBoundDBIObj($config);
-                my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
-                $dbh->disconnect();
-
-                my $num_of_results = scalar keys %$results_hashref;
-                    
-                if ($num_of_results > 1) { 
-                    # If more than one result returned, die because we the username field should be unique!
-                    $RT::Logger->debug( "Disable Check Failed :: (",
-                                        $service,
-                                        ")",
-                                        $name_to_update,
-                                        "More than one user with that username!");
-                    # Drop out to next service for an info check
-                    next;
-                } elsif ($num_of_results < 1) { 
-                    # If 0 or negative integer, no user found or major failure
-                    $RT::Logger->debug( "Disable Check Failed :: (",
-                                        $service,
-                                        ")",
-                                        $name_to_update,
-                                        "User not found");   
-                    # Drop out to next service for an info check
-                    next;             
-                } else { 
-                    # otherwise all should be well
-                    
-                    # $user_db_disable_value = The value for "disabled" returned from the DB
-                    my $user_db_disable_value = $results_hashref->{$name_to_update}->{$disable_field};
-                    
-                    # For each of the values in the (list of values that we consider to mean the user is disabled)..
-                    foreach my $disable_value (@{$disable_values_list}){
-                        $RT::Logger->debug( "DB Disable Check:", 
-                                            "User's Val is $user_db_disable_value,",
-                                            "Checking against: $disable_value");
-                        
-                        # If the value from the DB matches a value from the list, the user is disabled.
-                        if ($user_db_disable_value eq $disable_value) {
-                            $user_disabled = 1;
-                        }
-                    }
-                }
-            }
             
-            # If we havent been dropped out by a "next;" by now, 
-            # then this will be the authoritative service
+            unless RT::Authen::ExternalAuth::DBI->UserExists($username,$service) {
+                $RT::Logger->debug("User (",
+                                    $username,
+                                    ") doesn't exist in service (",
+                                    $service,
+                                    ") - Cannot update information - Skipping...");
+                next;
+            }
+            $user_disabled = RT::Authen::ExternalAuth::DBI->UserDisabled($username,$service);
             
         } elsif ($config->{'type'} eq 'ldap') {
             
-            my $base            = $config->{'base'};
-            my $filter          = $config->{'filter'};
-            my $disable_filter  = $config->{'d_filter'};
-            
-            my ($u_filter,$d_filter);
-
-            # While LDAP filters must be surrounded by parentheses, an empty set
-            # of parentheses is an invalid filter and will cause failure
-            # This shouldn't matter since we are now using Net::LDAP::Filter below,
-            # but there's no harm in doing this to be sure
-            if ($filter eq "()") { undef($filter) };
-            if ($disable_filter eq "()") { undef($disable_filter) };
-
-            unless ($disable_filter) {
-                $RT::Logger->error("You haven't specified a d_filter in your configuration.  Not specifying a d_filter usually results in all users being marked as disabled and being unable to log in");
-            }
-
-            if (defined($config->{'attr_map'}->{'Name'})) {
-                # Construct the complex filter
-                $disable_filter = Net::LDAP::Filter->new(   '(&' . 
-                                                            $filter . 
-                                                            $disable_filter . 
-                                                            '(' . 
-                                                            $config->{'attr_map'}->{'Name'} . 
-                                                            '=' . 
-                                                            $self->Name . 
-                                                            '))'
-                                                        );
-                $filter = Net::LDAP::Filter->new(           '(&' . 
-                                                            $filter . 
-                                                            '(' . 
-                                                            $config->{'attr_map'}->{'Name'} . 
-                                                            '=' . 
-                                                            $self->Name . 
-                                                            '))'
-                                                );
-            }
- 
-            my $ldap = $self->_GetBoundLdapObj($config);
-            next unless $ldap;
-
-            my @attrs = values(%{$config->{'attr_map'}});
-
-            # FIRST, check that the user exists in the LDAP service
-            $RT::Logger->debug( "LDAP Search === ",
-                                "Base:",
-                                $base,
-                                "== Filter:", 
-                                $filter->as_string,
-                                "== Attrs:", 
-                                join(',',@attrs));
-            
-            my $user_found = $ldap->search( base    => $base,
-                                            filter  => $filter,
-                                            attrs   => \@attrs);
-
-            if($user_found->count < 1) {
-                # If 0 or negative integer, no user found or major failure
-                $RT::Logger->debug( "Disable Check Failed :: (",
+            unless RT::Authen::ExternalAuth::LDAP->UserExists($username,$service) {
+                $RT::Logger->debug("User (",
+                                    $username,
+                                    ") doesn't exist in service (",
                                     $service,
-                                    ")",
-                                    $name_to_update,
-                                    "User not found");   
-                # Drop out to next service for an info check
-                next;  
-            } elsif ($user_found->count > 1) {
-                # If more than one result returned, die because we the username field should be unique!
-                $RT::Logger->debug( "Disable Check Failed :: (",
-                                    $service,
-                                    ")",
-                                    $name_to_update,
-                                    "More than one user with that username!");
-                # Drop out to next service for an info check
+                                    ") - Cannot update information - Skipping...");
                 next;
             }
-            undef $user_found;
-                        
-            # SECOND, now we know the user exists in the service, 
-            # check if they are returned in a search for disabled users 
-            
-            # We only need the UID for confirmation now, 
-            # the other information would waste time and bandwidth
-            @attrs = ('uid'); 
-            
-            $RT::Logger->debug( "LDAP Search === ",
-                                "Base:",
-                                $base,
-                                "== Filter:", 
-                                $disable_filter->as_string,
-                                "== Attrs:", 
-                                join(',',@attrs));
-                  
-            my $disabled_users = $ldap->search(base   => $base, 
-                                               filter => $disable_filter, 
-                                               attrs  => \@attrs);
-            # If ANY results are returned, 
-            # we are going to assume the user should be disabled
-            if ($disabled_users->count) {
-               $user_disabled = 1;
-            }
-            
-            # If we havent been dropped out by a "next;" by now, 
-            # then this will be the authoritative service
+            $user_disabled = RT::Authen::ExternalAuth::LDAP->UserDisabled($username,$service);
             
         } else {
             # The type of external service doesn't currently have any methods associated with it. Or it's a typo.
@@ -541,7 +334,7 @@ sub UpdateFromExternal {
         # Load the user inside an RT::SystemUser so you can  set their 
         # information no matter who they are or what permissions they have
         my $UserObj = RT::User->new($RT::SystemUser);
-        $UserObj->Load($name_to_update);        
+        $UserObj->Load($username);        
 
         # If user is disabled, set the RT::Principle to disabled and return out of the function.
         # I think it's a waste of time and energy to update a user's information if they are disabled
@@ -556,24 +349,24 @@ sub UpdateFromExternal {
             # Make sure principle is disabled in RT
             my ($val, $message) = $UserObj->SetDisabled(1);
             # Log what has happened
-            $RT::Logger->info("DISABLED user ",
-                                $name_to_update,
-                                "per External Service", 
+            $RT::Logger->info("User marked as DISABLED (",
+                                $username,
+                                ") per External Service", 
                                 "($val, $message)\n");
             $msg = "User disabled";
         } else {
             # Make sure principle is not disabled in RT
             my ($val, $message) = $UserObj->SetDisabled(0);
             # Log what has happened
-            $RT::Logger->info("ENABLED user ",
-                                $name_to_update,
-                                "per External Service",
+            $RT::Logger->info("User marked as ENABLED (",
+                                $username,
+                                ") per External Service",
                                 "($val, $message)\n");
 
             # Update their info from external service using the username as the lookup key
             # CanonicalizeUserInfo will work out for itself which service to use
             # Passing it a service instead could break other RT code
-            my %args = (Name => $name_to_update);
+            my %args = (Name => $username);
             $self->CanonicalizeUserInfo(\%args);
 
             # For each piece of information returned by CanonicalizeUserInfo,
@@ -598,9 +391,9 @@ sub UpdateFromExternal {
 
             # Confirm update success
             $updated = 1;
-            $RT::Logger->debug( "UPDATED user ",
-                                $name_to_update,
-                                "from External Service\n");
+            $RT::Logger->debug( "UPDATED user (",
+                                $username,
+                                ") from External Service\n");
             $msg = 'User updated';
             
             # Just in case we're not the last iteration of the foreach,
