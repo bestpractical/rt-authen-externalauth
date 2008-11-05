@@ -178,7 +178,7 @@ sub CanonicalizeUserInfo {
         foreach my $rt_attr (@{$config->{'attr_match_list'}}) {
             # Jump to the next attr in $args if this one isn't in the attr_match_list
             $RT::Logger->debug( "Attempting to use this canonicalization key:",$rt_attr);
-            unless defined($args->{$rt_attr}) {
+            unless(defined($args->{$rt_attr})) {
                 $RT::Logger->debug("This attribute (",
                                     $rt_attr,
                                     ") is not defined in the attr_match_list for this service (",
@@ -279,7 +279,7 @@ sub UpdateFromExternal {
         my $config = $RT::ExternalSettings->{$service};
         
         # If the config doesn't exist, don't bother doing anything, skip to next in list.
-        unless defined($config) {
+        unless(defined($config)) {
             $RT::Logger->debug("You haven't defined a configuration for the service named \"",
                                 $service,
                                 "\" so I'm not going to try to get user information from it. Skipping...");
@@ -289,7 +289,7 @@ sub UpdateFromExternal {
         # If it's a DBI config:
         if ($config->{'type'} eq 'db') {
             
-            unless RT::Authen::ExternalAuth::DBI->UserExists($username,$service) {
+            unless(RT::Authen::ExternalAuth::DBI->UserExists($username,$service)) {
                 $RT::Logger->debug("User (",
                                     $username,
                                     ") doesn't exist in service (",
@@ -301,7 +301,7 @@ sub UpdateFromExternal {
             
         } elsif ($config->{'type'} eq 'ldap') {
             
-            unless RT::Authen::ExternalAuth::LDAP->UserExists($username,$service) {
+            unless(RT::Authen::ExternalAuth::LDAP->UserExists($username,$service)) {
                 $RT::Logger->debug("User (",
                                     $username,
                                     ") doesn't exist in service (",

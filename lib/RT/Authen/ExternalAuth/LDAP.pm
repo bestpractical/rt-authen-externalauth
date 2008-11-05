@@ -54,7 +54,7 @@ sub GetAuth {
                             ldap_error_name($ldap_msg->code), 
                             $ldap_msg->code);
         # Didn't even get a partial result - jump straight to the next external auth service
-        retun 0;
+        return 0;
     }
 
     unless ($ldap_msg->count == 1) {
@@ -336,8 +336,8 @@ sub UserDisabled {
     my ($username,$service) = @_;
 
     # FIRST, check that the user exists in the LDAP service
-    unless UserExists($username,$service) {
-        $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not disabled for the purposes of disable checking";
+    unless(UserExists($username,$service)) {
+        $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not disabled for the purposes of disable checking");
         return 0;
     }
     

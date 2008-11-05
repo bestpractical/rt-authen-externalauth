@@ -232,8 +232,8 @@ sub UserDisabled {
     my ($username,$service) = @_;
     
     # FIRST, check that the user exists in the DBI service
-    unless UserExists($username,$service) {
-        $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not disabled for the purposes of disable checking";
+    unless(UserExists($username,$service)) {
+        $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not disabled for the purposes of disable checking");
         return 0;
     }
     
