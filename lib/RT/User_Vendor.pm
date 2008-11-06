@@ -1,10 +1,3 @@
-### User_Vendor.pm
-# Overlay for RT::User object as part of RT::Authen::ExternalAuth
-#
-# Originally based on User_Local.pm for LDAP created by Jim Meyer (purp@acm.org) and found at:
-#   http://wiki.bestpractical.com/view/LdapUserLocalOverlay
-
-
 no warnings qw(redefine);
 use strict;
 use RT::Authen::ExternalAuth;

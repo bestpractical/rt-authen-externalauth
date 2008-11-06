@@ -2,15 +2,18 @@
 
 use RT::Authen::ExternalAuth;
 
+# Since refactoring at 0.07_01 I believe the following workaround is now not required.
+######################################################################################
 # If the RT::User::UpdateFromExternal method is not available, then we are in
 # RT-3.8.0 or RT-3.8.1 and we need to work around a bug in the plugin system:
 # Temporarily force RT to reload RT::User, since it isn't being loaded
 # correctly as a plugin.
-unless (RT::User->can('UpdateFromExternal')) {
-    $RT::Logger->error("Working around bug in RT and reloading RT::User");
-    delete $INC{'RT/User.pm'};
-    require RT::User;
-}
+#unless (RT::User->can('UpdateFromExternal')) {
+#    $RT::Logger->error("Working around bug in RT and reloading RT::User");
+#    delete $INC{'RT/User.pm'};
+#    require RT::User;
+#}
+######################################################################################
 
 # If the user is logging in, let's authenticate; if they can auth but don't load
 # (e.g. they don't have an account but external auth succeeds), we'll autocreate
@@ -18,44 +21,35 @@ unless (RT::User->can('UpdateFromExternal')) {
 unless ($session{'CurrentUser'}) {
     
     # Password has not been confirmed valid until we say so
-    my $password_validated;
-
-    # This WAS used to stop a pointless LookupExternalUserInfo
-    # called by UpdateFromExternal later on since it's already
-    # called by RT::User::Create if the user is autocreated
-    # but this has been deprecated pending a little bit of a
-    # rewrite since I realised that we're not calling
-    # CanonicalizeUserInfo but UpdateFromExternal which is the
-    # only code that checks whether the user is externally
-    # marked as disabled.
-    my $user_autocreated = 0;
+    my $password_validated = 0;
 
     # If $user has been passed by login page, 
     # or any other custom code previous to this
     if (defined ($user)) {
         $session{'CurrentUser'} = RT::CurrentUser->new();
+        
+        # Does user exist internally?
         $session{'CurrentUser'}->Load($user);
 
         # Unless we have loaded a valid user with a UserID
         unless ($session{'CurrentUser'}->Id) {
+            
             # Check if user exists externally - autocreate user if it does
-           
             if(RT::Authen::ExternalAuth->UserExists($user)){
-                    my ($val, $msg) = 
-                      $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
-                                       Name   => $user,
-                                       Gecos  => $user,
-                                      );
-                    unless ($val) {
-                        $RT::Logger->error( "Couldn't create user $user: $msg" );
-                        return;
-                    }
-                    $RT::Logger->info(  "Autocreated authenticated user",
-                                        $UserObj->Name,
-                                        "(",
-                                        $UserObj->Id,
-                                        ")");
-                    $user_autocreated = 1;
+                my ($val, $msg) = 
+                  $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
+                                   Name   => $user,
+                                   Gecos  => $user,
+                                  );
+                unless ($val) {
+                    $RT::Logger->error( "Couldn't create user $user: $msg" );
+                    return;
+                }
+                $RT::Logger->info(  "Autocreated authenticated user",
+                                    $UserObj->Name,
+                                    "(",
+                                    $UserObj->Id,
+                                    ")");
             }
 
             my ($val, $msg) = $UserObj->SetName($user);
