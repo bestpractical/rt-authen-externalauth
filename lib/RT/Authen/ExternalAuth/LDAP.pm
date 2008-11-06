@@ -2,6 +2,7 @@ package RT::Authen::ExternalAuth::LDAP;
 use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
 use Net::LDAP::Util qw(ldap_error_name);
 use Net::LDAP::Filter;
+require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
 sub GetAuth {
     

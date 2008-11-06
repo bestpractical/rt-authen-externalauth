@@ -1,5 +1,7 @@
 <%init>
 
+use RT::Authen::ExternalAuth;
+
 # If the RT::User::UpdateFromExternal method is not available, then we are in
 # RT-3.8.0 or RT-3.8.1 and we need to work around a bug in the plugin system:
 # Temporarily force RT to reload RT::User, since it isn't being loaded
@@ -37,22 +39,8 @@ unless ($session{'CurrentUser'}) {
         # Unless we have loaded a valid user with a UserID
         unless ($session{'CurrentUser'}->Id) {
             # Check if user exists externally - autocreate user if it does
-            my $user_exists_externally = 0;
-            my @auth_services = @$RT::ExternalAuthPriority;
-            foreach my $service (@auth_services) {
-                my $config = $RT::Settings->{$service};
-                if ($config->{'type'} eq 'db') {    
-                    $user_exists_externally = RT::Authen::ExternalAuth::DBI->UserExists($service,$user);
-                    last if $user_exists_externally;
-                } elsif ($config->{'type'} eq 'ldap') {
-                    $user_exists_externally = RT::Authen::ExternalAuth::LDAP->UserExists($service,$user);
-                    last if $user_exists_externally;
-                } else {
-                    $RT::Logger->error("Invalid type specification in config for service:",$service);
-                }
-            }
-            
-            if($user_exists_externally){
+           
+            if(RT::Authen::ExternalAuth->UserExists($user)){
                     my ($val, $msg) = 
                       $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
                                        Name   => $user,
@@ -99,7 +87,7 @@ unless ($session{'CurrentUser'}) {
         # the database, but more importantly, UpdateFromExternal will check 
         # whether the user is disabled or not which we have not been able to 
         # do during auto-create
-        $session{'CurrentUser'}->UserObj->UpdateFromExternal();
+        RT::Authen::ExternalAuth->UpdateUserInfo($session{'CurrentUser'}->UserObj->Name);
                 
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!
