@@ -2,6 +2,7 @@ package RT::Authen::ExternalAuth::LDAP;
 use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
 use Net::LDAP::Util qw(ldap_error_name);
 use Net::LDAP::Filter;
+use Data::Dumper;
 require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
 sub GetAuth {
@@ -181,7 +182,7 @@ sub CanonicalizeUserInfo {
     }
 
     # Get a Net::LDAP object based on the config we provide
-    my $ldap = $self->_GetBoundLdapObj($config);
+    my $ldap = _GetBoundLdapObj($config);
 
     # Jump to the next external information service if we can't get one, 
     # errors should be logged by _GetBoundLdapObj so we don't have to.
@@ -266,8 +267,8 @@ sub CanonicalizeUserInfo {
 }
 
 sub UserExists {
-    
-    my ($username,$service) = @_;
+    my ($self,$called_by,$service,$username) = @_;
+   $RT::Logger->debug("UserExists params:\nself: $self , called_by: $called_by , service: $service , username: $username"); 
     my $config              = $RT::ExternalSettings->{$service};
     
     my $base                = $config->{'base'};
@@ -291,7 +292,7 @@ sub UserExists {
                                         );
     }
 
-    my $ldap = $self->_GetBoundLdapObj($config);
+    my $ldap = _GetBoundLdapObj($config);
     next unless $ldap;
 
     my @attrs = values(%{$config->{'attr_map'}});
@@ -384,7 +385,7 @@ sub UserDisabled {
         
     }
 
-    my $ldap = $self->_GetBoundLdapObj($config);
+    my $ldap = _GetBoundLdapObj($config);
     next unless $ldap;
 
     # We only need the UID for confirmation now, 

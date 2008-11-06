@@ -37,7 +37,7 @@ unless ($session{'CurrentUser'}) {
             my $UserObj = RT::User->new($RT::SystemUser);
             my ($val, $ret, $msg); 
             # Check if user exists externally - autocreate user if it does
-            if(RT::Authen::ExternalAuth->UserExists($user)){
+            if(RT::Authen::ExternalAuth::UserExists($user)){
                 ($val, $msg) = 
                   $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
                                    Name   => $user,
@@ -54,13 +54,15 @@ unless ($session{'CurrentUser'}) {
                                     ")");
 
                 ($val, $msg) = $UserObj->SetName($user);
-
+                $RT::Logger->debug("Set Name result: Val:",$val,"Msg:",$msg);
                 # If a password was given on the login page, validate it
                 if (defined($pass)) {
+                    $RT::Logger->debug("\$pass defined ($pass), Running IsPassword");
                     $password_validated = $UserObj->IsPassword($pass);
                 }
             
                 if($password_validated) {
+$RT::Logger->debug("Pass validated");
                     if ($UserObj->Id) {
                         ($ret, $msg) = $session{'CurrentUser'}->Load($user);
                         unless ($ret) {
@@ -81,7 +83,7 @@ unless ($session{'CurrentUser'}) {
         # the database, but more importantly, UpdateFromExternal will check 
         # whether the user is disabled or not which we have not been able to 
         # do during auto-create
-        my ($updated,$update_msg) = RT::Authen::ExternalAuth->UpdateUserInfo($session{'CurrentUser'}->UserObj->Name);
+        my ($updated,$update_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session{'CurrentUser'}->UserObj->Name);
                 
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!

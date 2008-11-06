@@ -143,7 +143,7 @@ sub CanonicalizeUserInfo {
 
     # Uncomment this to trace basic DBI throughput in a log
     # DBI->trace(1,'/tmp/dbi.log');
-    my $dbh = $self->_GetBoundDBIObj($config);
+    my $dbh = _GetBoundDBIObj($config);
     my $results_hashref = $dbh->selectall_hashref($query,$key,{},@bind_params);
     $dbh->disconnect();
 
@@ -199,7 +199,7 @@ sub UserExists {
     # DBI->trace(1,'/tmp/dbi.log');
     
     # Get DBI Object, do the query, disconnect
-    my $dbh = $self->_GetBoundDBIObj($config);
+    my $dbh = _GetBoundDBIObj($config);
     my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
     $dbh->disconnect();
 
@@ -259,7 +259,7 @@ sub UserDisabled {
     # DBI->trace(1,'/tmp/dbi.log');
     
     # Get DBI Object, do the query, disconnect
-    my $dbh = $self->_GetBoundDBIObj($config);
+    my $dbh = _GetBoundDBIObj($config);
     my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
     $dbh->disconnect();
 

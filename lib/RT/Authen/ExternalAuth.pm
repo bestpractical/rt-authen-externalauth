@@ -22,11 +22,12 @@ ok(require RT::Authen::ExternalAuth::LDAP);
 ok(require RT::Authen::ExternalAuth::DBI);
 
 =end testing
-    
+
+=cut    
+
 use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
-
-=cut
+use Data::Dumper;
 
 sub UpdateUserInfo {
     my $username        = shift;
@@ -109,20 +110,26 @@ sub UpdateUserInfo {
 
 sub UserExists {
 
+    my $self = shift;
     my $username = shift;
     my $user_exists_externally = 0;   
 
     my @auth_services = @$RT::ExternalAuthPriority;
+$RT::Logger->debug("auth_services:",Dumper(@auth_services));
     foreach my $service (@auth_services) {
-        my $config = $RT::Settings->{$service};
+        my $config = $RT::ExternalSettings->{$service};
+$RT::Logger->debug("config:",Dumper($config));
         if ($config->{'type'} eq 'db') {    
-            $user_exists_externally = RT::Authen::ExternalAuth::DBI->UserExists($service,$user);
+            $user_exists_externally = RT::Authen::ExternalAuth::DBI->UserExists($service,$username);
             last if $user_exists_externally;
         } elsif ($config->{'type'} eq 'ldap') {
-            $user_exists_externally = RT::Authen::ExternalAuth::LDAP->UserExists($service,$user);
+            $user_exists_externally = RT::Authen::ExternalAuth::LDAP->UserExists($service,$username);
             last if $user_exists_externally;
         } else {
-            $RT::Logger->error("Invalid type specification in config for service:",$service);
+            $RT::Logger->error("Invalid type specification (",
+                               $config->{'type'},
+                               ") in config for service:",
+                               $service);
         }
     }
     
