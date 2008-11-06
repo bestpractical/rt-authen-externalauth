@@ -2,16 +2,14 @@
 
 use RT::Authen::ExternalAuth;
 
-# Since refactoring at 0.07_01 I believe the following workaround is now not required.
-######################################################################################
 # If the RT::User::UpdateFromExternal method is not available, then we are in
 # RT-3.8.0 or RT-3.8.1 and we need to work around a bug in the plugin system:
 # Temporarily force RT to reload RT::User, since it isn't being loaded
 # correctly as a plugin.
 #unless (RT::User->can('UpdateFromExternal')) {
-#    $RT::Logger->error("Working around bug in RT and reloading RT::User");
-#    delete $INC{'RT/User.pm'};
-#    require RT::User;
+    $RT::Logger->error("Working around bug in RT and reloading RT::User");
+    delete $INC{'RT/User.pm'};
+    require RT::User;
 #}
 ######################################################################################
 
@@ -32,14 +30,14 @@ unless ($session{'CurrentUser'}) {
         $session{'CurrentUser'}->Load($user);
 
         # Unless we have loaded a valid user with a UserID
+        # check if user exists externally and autocreate if it does
         unless ($session{'CurrentUser'}->Id) {
             
-            my $UserObj = RT::User->new($RT::SystemUser);
+            $session{'CurrentUser'} = RT::User->new($RT::SystemUser);
             my ($val, $ret, $msg); 
-            # Check if user exists externally - autocreate user if it does
             if(RT::Authen::ExternalAuth::UserExists($user)){
                 ($val, $msg) = 
-                  $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
+                  $session{'CurrentUser'}->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
                                    Name   => $user,
                                    Gecos  => $user,
                                   );
@@ -48,29 +46,25 @@ unless ($session{'CurrentUser'}) {
                     return;
                 }
                 $RT::Logger->info(  "Autocreated authenticated user",
-                                    $UserObj->Name,
+                                    $session{'CurrentUser'}->Name,
                                     "(",
-                                    $UserObj->Id,
+                                    $session{'CurrentUser'}->Id,
                                     ")");
 
-                ($val, $msg) = $UserObj->SetName($user);
+                ($val, $msg) = $session{'CurrentUser'}->SetName($user);
                 $RT::Logger->debug("Set Name result: Val:",$val,"Msg:",$msg);
-                # If a password was given on the login page, validate it
-                if (defined($pass)) {
-                    $RT::Logger->debug("\$pass defined ($pass), Running IsPassword");
-                    $password_validated = $UserObj->IsPassword($pass);
-                }
-            
-                if($password_validated) {
-$RT::Logger->debug("Pass validated");
-                    if ($UserObj->Id) {
-                        ($ret, $msg) = $session{'CurrentUser'}->Load($user);
-                        unless ($ret) {
-                            $RT::Logger->error("Couldn't load user $user: $msg");
-                        }
-                    }
-                }
             }
+        } 
+       
+        # If a password was given on the login page, validate it
+        if (defined($pass)) {
+            $RT::Logger->debug("\$pass defined ($pass), Running IsPassword");
+            $password_validated = $session{'CurrentUser'}->IsPassword($pass);
+        }
+            
+        unless($password_validated) {
+            $RT::Logger->debug("Password Incorrect");
+            delete $session{'CurrentUser'};
         }
     }
     

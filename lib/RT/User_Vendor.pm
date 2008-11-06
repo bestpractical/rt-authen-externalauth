@@ -21,7 +21,7 @@ sub IsPassword {
         return (undef);
     }
 
-
+    $RT::Logger->debug("Trying External Authentication (",$self->Name,")");
     if(RT::Authen::ExternalAuth::GetAuth($self->Name,$value)) {
         $RT::Logger->debug( (caller(0))[3], 
                             "EXTERNAL AUTH OKAY");
@@ -84,7 +84,7 @@ in all other cases.
 sub CanonicalizeUserInfo {
     my $self = shift;
     my $args = shift;
-    return($RT::Authen::ExternalAuth::CanonicalizeUserInfo($self,$args));
+    return(RT::Authen::ExternalAuth::CanonicalizeUserInfo($self,$args));
 }
 # }}}
 

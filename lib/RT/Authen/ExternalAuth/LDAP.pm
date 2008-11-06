@@ -31,7 +31,7 @@ sub GetAuth {
     $filter = Net::LDAP::Filter->new(   '(&(' . 
                                         $attr_map->{'Name'} . 
                                         '=' . 
-                                        $self->Name . 
+                                        $username . 
                                         ')' . 
                                         $filter . 
                                         ')'
@@ -73,12 +73,12 @@ sub GetAuth {
                         $ldap_dn);
 
     # THIS bind determines success or failure on the password.
-    $ldap_msg = $ldap->bind($ldap_dn, password => $pass_to_auth);
+    $ldap_msg = $ldap->bind($ldap_dn, password => $password);
 
     unless ($ldap_msg->code == LDAP_SUCCESS) {
         $RT::Logger->info(  $service,
                             "AUTH FAILED", 
-                            $self->Name, 
+                            $username, 
                             "(can't bind:", 
                             ldap_error_name($ldap_msg->code), 
                             $ldap_msg->code, 
@@ -123,7 +123,7 @@ sub GetAuth {
         unless ($ldap_msg->count == 1) {
             $RT::Logger->info(  $service,
                                 "AUTH FAILED:", 
-                                $self->Name);
+                                $username);
                                 
             # Fail auth - jump to next external auth service
             return 0;
@@ -267,8 +267,8 @@ sub CanonicalizeUserInfo {
 }
 
 sub UserExists {
-    my ($self,$called_by,$service,$username) = @_;
-   $RT::Logger->debug("UserExists params:\nself: $self , called_by: $called_by , service: $service , username: $username"); 
+    my ($username,$service) = @_;
+   $RT::Logger->debug("UserExists params:\nusername: $username , service: $service"); 
     my $config              = $RT::ExternalSettings->{$service};
     
     my $base                = $config->{'base'};

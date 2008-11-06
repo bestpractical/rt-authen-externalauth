@@ -328,7 +328,7 @@ sub CanonicalizeUserInfo {
     if ($found) {
         # It's important that we always have a canonical email address
         if ($params{'EmailAddress'}) {
-            $params{'EmailAddress'} = $self->CanonicalizeEmailAddress($params{'EmailAddress'});
+            $params{'EmailAddress'} = $UserObj->CanonicalizeEmailAddress($params{'EmailAddress'});
         } 
         %$args = (%$args, %params);
     }
