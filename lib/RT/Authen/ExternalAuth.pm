@@ -119,10 +119,10 @@ sub UserExists {
         my $config = $RT::ExternalSettings->{$service};
 
         if ($config->{'type'} eq 'db') {    
-            $user_exists_externally = RT::Authen::ExternalAuth::DBI::UserExists($service,$username);
+            $user_exists_externally = RT::Authen::ExternalAuth::DBI::UserExists($username,$service);
             last if $user_exists_externally;
         } elsif ($config->{'type'} eq 'ldap') {
-            $user_exists_externally = RT::Authen::ExternalAuth::LDAP::UserExists($service,$username);
+            $user_exists_externally = RT::Authen::ExternalAuth::LDAP::UserExists($username,$service);
             last if $user_exists_externally;
         } else {
             $RT::Logger->error("Invalid type specification (",

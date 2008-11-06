@@ -77,7 +77,7 @@ unless ($session{'CurrentUser'}) {
         # the database, but more importantly, UpdateFromExternal will check 
         # whether the user is disabled or not which we have not been able to 
         # do during auto-create
-        my ($updated,$update_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session{'CurrentUser'}->UserObj->Name);
+        my ($updated,$update_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session{'CurrentUser'}->Name);
                 
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!
