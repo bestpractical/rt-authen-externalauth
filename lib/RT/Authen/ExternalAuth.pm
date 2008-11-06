@@ -26,6 +26,8 @@ ok(require RT::Authen::ExternalAuth::DBI);
 use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
 
+=cut
+
 sub UpdateUserInfo {
     my $username        = shift;
 
@@ -223,6 +225,7 @@ sub UserDisabled {
             next;
         }
     
+    }
     return $user_disabled;
 }
 
