@@ -293,7 +293,7 @@ sub UserExists {
     }
 
     my $ldap = _GetBoundLdapObj($config);
-    next unless $ldap;
+    return unless $ldap;
 
     my @attrs = values(%{$config->{'attr_map'}});
 
