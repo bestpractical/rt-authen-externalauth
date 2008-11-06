@@ -1,16 +1,20 @@
+<%once>
+my $loaded_user = 0;
+</%once>
 <%init>
 
 use RT::Authen::ExternalAuth;
 
-# If the RT::User::UpdateFromExternal method is not available, then we are in
-# RT-3.8.0 or RT-3.8.1 and we need to work around a bug in the plugin system:
+# Work around a bug in the RT 3.8.0 and 3.8.1 plugin system (fixed in 3.8.2)
 # Temporarily force RT to reload RT::User, since it isn't being loaded
 # correctly as a plugin.
-#unless (RT::User->can('UpdateFromExternal')) {
+unless ($loaded_user) {
     $RT::Logger->error("Working around bug in RT and reloading RT::User");
+    $loaded_user++;
     delete $INC{'RT/User.pm'};
+    delete $INC{'RT/User_Overlay.pm'};
     require RT::User;
-#}
+}
 ######################################################################################
 
 # If the user is logging in, let's authenticate; if they can auth but don't load
