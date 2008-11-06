@@ -62,7 +62,7 @@ sub GetAuth {
     unless ($ldap_msg->count == 1) {
         $RT::Logger->info(  $service,
                             "AUTH FAILED:", 
-                            $self->Name,
+                            $username,
                             "User not found or more than one user found");
         # We got no user, or too many users.. jump straight to the next external auth service
         return 0;

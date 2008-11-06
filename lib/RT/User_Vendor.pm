@@ -22,7 +22,7 @@ sub IsPassword {
     }
 
 
-    if(RT::Authen::ExternalAuth->GetAuth($self->Name,$value)) {
+    if(RT::Authen::ExternalAuth::GetAuth($self->Name,$value)) {
         $RT::Logger->debug( (caller(0))[3], 
                             "EXTERNAL AUTH OKAY");
         return(1);
@@ -84,7 +84,7 @@ in all other cases.
 sub CanonicalizeUserInfo {
     my $self = shift;
     my $args = shift;
-    return($RT::Authen::ExternalAuth->CanonicalizeUserInfo($self,$args));
+    return($RT::Authen::ExternalAuth::CanonicalizeUserInfo($self,$args));
 }
 # }}}
 

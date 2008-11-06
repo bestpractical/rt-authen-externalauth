@@ -37,7 +37,7 @@ sub UpdateUserInfo {
     my $updated         = 0;
     my $msg             = "User NOT updated";
 
-    my $user_disabled 	= RT::Authen::ExternalAuth->UserDisabled($username);
+    my $user_disabled 	= RT::Authen::ExternalAuth::UserDisabled($username);
 
     my $UserObj = RT::User->new($RT::SystemUser);
     $UserObj->Load($username);        
@@ -110,20 +110,19 @@ sub UpdateUserInfo {
 
 sub UserExists {
 
-    my $self = shift;
     my $username = shift;
     my $user_exists_externally = 0;   
 
     my @auth_services = @$RT::ExternalAuthPriority;
-$RT::Logger->debug("auth_services:",Dumper(@auth_services));
+
     foreach my $service (@auth_services) {
         my $config = $RT::ExternalSettings->{$service};
-$RT::Logger->debug("config:",Dumper($config));
+
         if ($config->{'type'} eq 'db') {    
-            $user_exists_externally = RT::Authen::ExternalAuth::DBI->UserExists($service,$username);
+            $user_exists_externally = RT::Authen::ExternalAuth::DBI::UserExists($service,$username);
             last if $user_exists_externally;
         } elsif ($config->{'type'} eq 'ldap') {
-            $user_exists_externally = RT::Authen::ExternalAuth::LDAP->UserExists($service,$username);
+            $user_exists_externally = RT::Authen::ExternalAuth::LDAP::UserExists($service,$username);
             last if $user_exists_externally;
         } else {
             $RT::Logger->error("Invalid type specification (",
@@ -154,12 +153,12 @@ sub GetAuth {
         # And then act accordingly depending on what type of service it is.
         # Right now, there is only code for DBI and LDAP services
         if ($config->{'type'} eq 'db') {    
-            my $success = RT::Authen::ExternalAuth::DBI->GetAuth($service,$username,$password);
+            my $success = RT::Authen::ExternalAuth::DBI::GetAuth($service,$username,$password);
             return 1 if $success;
             next;
             
         } elsif ($config->{'type'} eq 'ldap') {
-            my $success = RT::Authen::ExternalAuth::LDAP->GetAuth($service,$username,$password);
+            my $success = RT::Authen::ExternalAuth::LDAP::GetAuth($service,$username,$password);
             return 1 if $success;
             next;
                     
@@ -203,7 +202,7 @@ sub UserDisabled {
         # If it's a DBI config:
         if ($config->{'type'} eq 'db') {
             
-            unless(RT::Authen::ExternalAuth::DBI->UserExists($username,$service)) {
+            unless(RT::Authen::ExternalAuth::DBI::UserExists($username,$service)) {
                 $RT::Logger->debug("User (",
                                     $username,
                                     ") doesn't exist in service (",
@@ -211,11 +210,11 @@ sub UserDisabled {
                                     ") - Cannot update information - Skipping...");
                 next;
             }
-            $user_disabled = RT::Authen::ExternalAuth::DBI->UserDisabled($username,$service);
+            $user_disabled = RT::Authen::ExternalAuth::DBI::UserDisabled($username,$service);
             
         } elsif ($config->{'type'} eq 'ldap') {
             
-            unless(RT::Authen::ExternalAuth::LDAP->UserExists($username,$service)) {
+            unless(RT::Authen::ExternalAuth::LDAP::UserExists($username,$service)) {
                 $RT::Logger->debug("User (",
                                     $username,
                                     ") doesn't exist in service (",
@@ -223,7 +222,7 @@ sub UserDisabled {
                                     ") - Cannot update information - Skipping...");
                 next;
             }
-            $user_disabled = RT::Authen::ExternalAuth::LDAP->UserDisabled($username,$service);
+            $user_disabled = RT::Authen::ExternalAuth::LDAP::UserDisabled($username,$service);
             
         } else {
             # The type of external service doesn't currently have any methods associated with it. Or it's a typo.
@@ -307,9 +306,9 @@ sub CanonicalizeUserInfo {
             # the service requested.
             
             if($config->{'type'} eq 'ldap'){    
-                ($found, %params) = RT::Authen::ExternalAuth::LDAP->CanonicalizeUserInfo($service,$key,$value);
+                ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo($service,$key,$value);
             } elsif ($config->{'type'} eq 'db') {
-                ($found, %params) = RT::Authen::ExternalAuth::DBI->CanonicalizeUserInfo($service,$key,$value);
+                ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo($service,$key,$value);
             } else {
                 $RT::Logger->debug( (caller(0))[3],
                                     "does not consider",
