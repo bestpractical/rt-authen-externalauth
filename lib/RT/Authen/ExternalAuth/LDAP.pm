@@ -452,10 +452,10 @@ sub _GetBoundLdapObj {
 
     my $msg = undef;
 
-    # Can't decide whether to add a little more error checking here..
-    # Perhaps, if user && pass, else dont pass a pass etc..
-    if ($ldap_user) {
+    if (($ldap_user) and ($ldap_pass)) {
         $msg = $ldap->bind($ldap_user, password => $ldap_pass);
+    } elsif (($ldap_user) and ( ! $ldap_pass)) {
+        $msg = $ldap->bind($ldap_user);
     } else {
         $msg = $ldap->bind;
     }
