@@ -137,7 +137,7 @@ sub GetAuth {
                         "External Auth OK (",
                         $service,
                         "):", 
-                        $name_to_auth);
+                        $username);
     return 1;
 
 }
