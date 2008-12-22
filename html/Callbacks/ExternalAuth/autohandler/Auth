@@ -13,6 +13,7 @@ unless ($loaded_user) {
     $loaded_user++;
     delete $INC{'RT/User.pm'};
     delete $INC{'RT/User_Overlay.pm'};
+    delete $INC{'RT/User_Vendor.pm'};
     require RT::User;
 }
 ######################################################################################
