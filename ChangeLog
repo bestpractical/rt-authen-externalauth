@@ -1,3 +1,10 @@
+v0.07_02 2008-12-22 Mon 17:01 -0500
+
+	* html/Callbacks/ExternalAuth/autohandler/Auth
+		
+		Make the workaround needed for 3.8.1 work
+		on 3.8.2
+
 v0.06    2008-11-01    Mike Peachey <zordrak@cpan.org>
 
     * README

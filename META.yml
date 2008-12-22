@@ -17,6 +17,5 @@ no_index:
     - var
     - inc
 requires: 
-  Net::LDAP: 0
   RT: 0
-version: 0.06_02
+version: 0.07_02
