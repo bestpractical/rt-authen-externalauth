@@ -1,9 +1,26 @@
-v0.07_02 2008-12-22 Mon 17:01 -0500
+v0.07_03 2009-01-16    Mike Peachey <zordrak@cpan.org>
+    
+    * ChangeLog
+        
+	Added entry for v0.07_01
 
-	* html/Callbacks/ExternalAuth/autohandler/Auth
+    * lib/RT/Authen/ExternalAuth.pm
+        
+	Version updated to 0.07_03
+
+v0.07_02 2008-12-22    Kevin Falcone <falcone@cpan.org>
+
+    * html/Callbacks/ExternalAuth/autohandler/Auth
 		
-		Make the workaround needed for 3.8.1 work
-		on 3.8.2
+        Make the workaround needed for 3.8.1 work on 3.8.2
+
+v0.07_01 2008-11-06    Mike Peachey <zordrak@cpan.org>
+                       Kevin Falcone <falcone@cpan.org>
+    
+    * ALL
+      
+        Complete code refactoring and updates for RT-3.8.x
+	compatability.
 
 v0.06    2008-11-01    Mike Peachey <zordrak@cpan.org>
 
