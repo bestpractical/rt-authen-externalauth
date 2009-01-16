@@ -312,7 +312,7 @@ sub UserDisabled {
 
 sub _GetBoundDBIObj {
     
-    # Config as hashref.
+    # Config as hashref.   #### Or is this a hash?
     my $config = shift;
 
     # Extract the relevant information from the config.

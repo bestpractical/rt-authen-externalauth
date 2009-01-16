@@ -20,6 +20,7 @@ our $VERSION = '0.07_03';
 ok(require RT::Authen::ExternalAuth);
 ok(require RT::Authen::ExternalAuth::LDAP);
 ok(require RT::Authen::ExternalAuth::DBI);
+ok(require RT::Authen::ExternalAuth::Cookie);
 
 =end testing
 
@@ -27,6 +28,7 @@ ok(require RT::Authen::ExternalAuth::DBI);
 
 use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
+use RT::Authen::ExternalAuth::Cookie;
 use Data::Dumper;
 
 sub UpdateUserInfo {
@@ -345,5 +347,11 @@ sub CanonicalizeUserInfo {
     ### should be honored in RT::User::Create()
     return($found || $RT::AutoCreateNonExternalUsers);
    
+}
+
+sub CheckCookies {
+
+    return RT::Authen::ExternalAuth::Cookie::CheckCookies();    
+
 }
 1;
