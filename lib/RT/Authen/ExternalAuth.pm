@@ -351,7 +351,7 @@ sub CanonicalizeUserInfo {
 
 sub CheckCookies {
 
-    return RT::Authen::ExternalAuth::Cookie::CheckCookies();    
+    return RT::Authen::ExternalAuth::DBI::CheckCookies();    
 
 }
 1;
