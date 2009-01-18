@@ -3,7 +3,6 @@ package RT::Authen::ExternalAuth::LDAP;
 use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
 use Net::LDAP::Util qw(ldap_error_name);
 use Net::LDAP::Filter;
-use Data::Dumper;
 
 use strict;
 use warnings;
@@ -179,7 +178,7 @@ sub CanonicalizeUserInfo {
         $RT::Logger->debug( "LDAP Filter invalid or not present.");
     }
 
-    unless ($base) {
+    unless (defined($base)) {
         $RT::Logger->critical(  (caller(0))[3],
                                 "No base given");
         # Drop out to the next external information service

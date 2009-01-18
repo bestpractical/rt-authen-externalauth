@@ -1,7 +1,6 @@
 package RT::Authen::ExternalAuth::DBI::Cookie;
 
 use CGI::Cookie;
-use Data::Dumper;
 
 use strict;
 use warnings;

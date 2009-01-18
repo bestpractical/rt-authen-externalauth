@@ -26,21 +26,11 @@ ok(require RT::Authen::ExternalAuth);
 use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
 
-use Data::Dumper;
-
 use strict;
 use warnings;
 
 sub DoAuth {
     my ($session,$given_user,$given_pass) = @_;
-
-    $RT::Logger->debug("Entering DoAuth. Params == \$given_user (",
-	    		Dumper($given_user),
-			") \$given_pass (",
-			Dumper($given_pass),
-			") \$session (",
-			Dumper($session),
-			")");
 
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
     my $pass_bypass = 0;
@@ -98,8 +88,8 @@ sub DoAuth {
 
             # Don't continue unless the $username exists in the external service
 
-	    $RT::Logger->debug("Calling UserExists with \$username ($username) and \$service ($service)");
-            next unless RT::Authen::ExternalAuth::UserExists($username, $service);
+            my $user_exists = RT::Authen::ExternalAuth::UserExists($username,$service);
+	    next unless $user_exists;
         }
 
         ####################################################################
@@ -211,7 +201,6 @@ sub DoAuth {
             # which will in turn call IsExternalPassword
     }
     
-    $RT::Logger->debug("End of ExternalAuth DoAuth. State of \$session:",Dumper($session));
     return (1, "Successful login");
 }
 
@@ -324,7 +313,7 @@ sub UserExists {
     # Request a username/password check from the specified service
     # This is only valid for non-SSO services.
 
-    my ($service,$username) = @_;
+    my ($username,$service) = @_;
 
     my $success = 0;
 
@@ -453,7 +442,7 @@ sub CanonicalizeUserInfo {
             unless(defined($args->{$rt_attr})) {
                 $RT::Logger->debug("This attribute (",
                                     $rt_attr,
-                                    ") is not defined in the attr_match_list for this service (",
+                                    ") is not defined in the attr_match_list for this service, or is null (",
                                     $service,
                                     ")");
                 next;
