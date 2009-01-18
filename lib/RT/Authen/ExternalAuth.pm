@@ -28,6 +28,9 @@ use RT::Authen::ExternalAuth::DBI;
 
 use Data::Dumper;
 
+use strict;
+use warnings;
+
 sub DoAuth {
     my ($session,$given_user,$given_pass) = @_;
 
@@ -35,7 +38,7 @@ sub DoAuth {
 	    		Dumper($given_user),
 			") \$given_pass (",
 			Dumper($given_pass),
-			") \%session (",
+			") \$session (",
 			Dumper($session),
 			")");
 
@@ -44,7 +47,7 @@ sub DoAuth {
     
     # Should have checked if user is already logged in before calling this function,
     # but just in case, we'll check too.
-    return (0, "User already logged in!") if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id);
+    return (0, "User already logged in!") if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id);
     # We don't have a logged in user. Let's try all our available methods in order.
     # last if success, next if not.
     
@@ -107,11 +110,11 @@ sub DoAuth {
         # then we need to create the user in RT.
 
         # Does user already exist internally to RT?
-        $session{'CurrentUser'} = RT::CurrentUser->new();
-        $session{'CurrentUser'}->Load($username);
+        $session->{'CurrentUser'} = RT::CurrentUser->new();
+        $session->{'CurrentUser'}->Load($username);
 
         # Unless we have loaded a valid user with a UserID create one.
-        unless ($session{'CurrentUser'}->Id) {
+        unless ($session->{'CurrentUser'}->Id) {
 			my $UserObj = RT::User->new($RT::SystemUser);
         	my ($val, $msg) = 
               $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
@@ -131,7 +134,7 @@ sub DoAuth {
             $RT::Logger->debug("Loading new user (",
             					$username,
             					") into current session");
-            $session{'CurrentUser'}->Load($username);
+            $session->{'CurrentUser'}->Load($username);
         } 
         
         ####################################################################
@@ -154,8 +157,8 @@ sub DoAuth {
     
     # If we got here and don't have a user loaded we must have failed to
     # get a full, valid user from an authoritative external source.
-    unless ($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
-        delete $session{'CurrentUser'};
+    unless ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
+        delete $session->{'CurrentUser'};
         return (0, "Failed to authenticate externally");
     }
     
@@ -168,7 +171,7 @@ sub DoAuth {
     
     # If we STILL have a completely valid RT user to play with...
     # and therefore password has been validated...
-    if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
+    if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
         
         # Even if we have JUST created the user in RT, we are going to
         # reload their information from an external source. This allows us
@@ -179,12 +182,12 @@ sub DoAuth {
         
         # Note that UpdateUserInfo does not care how we authenticated the user
         # It will look up user info from whatever is specified in $RT::ExternalInfoPriority
-        my ($updated,$update_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session{'CurrentUser'}->Name);
+        my ($updated,$update_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session->{'CurrentUser'}->Name);
                 
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!
-        if ($session{'CurrentUser'}->UserObj->Disabled) {
-            delete $session{'CurrentUser'};
+        if ($session->{'CurrentUser'}->UserObj->Disabled) {
+            delete $session->{'CurrentUser'};
             return (0, "User account disabled, login denied");
         }
     }
@@ -192,23 +195,23 @@ sub DoAuth {
     # If we **STILL** have a full user and the session hasn't already been deleted
     # This If/Else is logically unnecessary, but it doesn't hurt to leave it here
     # just in case. Especially to be a double-check to future modifications.
-    if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
+    if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
             
             $RT::Logger->info(  "Successful login for",
-                                $username,
+                                $session->{'CurrentUser'}->Name,
                                 "from",
                                 $ENV{'REMOTE_ADDR'});
             # Do not delete the session. User stays logged in and
             # autohandler will not check the password again
     } else {
             # Make SURE the session is deleted.
-            delete $session{'CurrentUser'};
+            delete $session->{'CurrentUser'};
             return (0, "Failed to authenticate externally");
             # This will cause autohandler to request IsPassword 
             # which will in turn call IsExternalPassword
     }
     
-    $RT::Logger->debug("End of ExternalAuth DoAuth. State of \%session:",Dumper(%session));
+    $RT::Logger->debug("End of ExternalAuth DoAuth. State of \$session:",Dumper($session));
     return (1, "Successful login");
 }
 

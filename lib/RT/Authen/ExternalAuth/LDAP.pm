@@ -1,8 +1,13 @@
 package RT::Authen::ExternalAuth::LDAP;
+
 use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
 use Net::LDAP::Util qw(ldap_error_name);
 use Net::LDAP::Filter;
 use Data::Dumper;
+
+use strict;
+use warnings;
+
 require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
 sub GetAuth {
@@ -390,7 +395,7 @@ sub UserDisabled {
 
     # We only need the UID for confirmation now, 
     # the other information would waste time and bandwidth
-    @attrs = ('uid'); 
+    my @attrs = ('uid'); 
     
     $RT::Logger->debug( "LDAP Search === ",
                         "Base:",

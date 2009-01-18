@@ -1,8 +1,10 @@
 package RT::Authen::ExternalAuth::DBI::Cookie;
 
-use strict;
 use CGI::Cookie;
 use Data::Dumper;
+
+use strict;
+use warnings;
 
 # {{{ sub GetCookieVal
 sub GetCookieVal {

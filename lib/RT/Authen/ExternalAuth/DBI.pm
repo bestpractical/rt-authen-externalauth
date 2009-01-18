@@ -1,6 +1,10 @@
 package RT::Authen::ExternalAuth::DBI;
+
 use DBI;
 use RT::Authen::ExternalAuth::DBI::Cookie;
+
+use strict;
+use warnings;
 
 sub GetAuth {
 
@@ -314,12 +318,13 @@ sub GetCookieAuth {
     $RT::Logger->debug( (caller(0))[3],
 	                "Checking Browser Cookies for an Authenticated User");
 			     
-    my $username = undef;
-
     # Get our cookie and database info...
     my $config = shift;
 
-    my $cookie_value = RT::Authen::ExternalAuth::DBI::Cookie::GetCookieVal($config->{'name'});
+    my $username = undef;
+    my $cookie_name = $config->{'name'};
+
+    my $cookie_value = RT::Authen::ExternalAuth::DBI::Cookie::GetCookieVal($cookie_name);
     unless($cookie_value){
         return $username;
     }
