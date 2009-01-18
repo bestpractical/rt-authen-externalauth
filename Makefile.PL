@@ -18,6 +18,9 @@ features(
     'Net::LDAP' => 0],
   'External DBI Sources' => [
     -default => 1,
-    'DBI' => 0]
+    'DBI' => 0],
+  'SSO Cookie Sources' => [
+    -default => 1,
+    'CGI::Cookies' => 0]
 );
 &WriteAll;

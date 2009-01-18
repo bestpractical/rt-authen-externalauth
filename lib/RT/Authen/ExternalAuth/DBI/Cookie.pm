@@ -23,7 +23,6 @@ sub GetCookieVal {
     }
 
     return $cookie_value;
-
 }
 
 # }}}

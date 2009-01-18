@@ -1,17 +1,77 @@
-v0.07_03 2009-01-16    Mike Peachey <zordrak@cpan.org>
+v0.08_01  2009-01-18    Mike Peachey <zordrak@cpan.org>
     
     * ChangeLog
         
-	Added entry for v0.07_01
+        Added entry for v0.08_01
+
+        Tabs-to-spaces conversion made where needed.
 
     * lib/RT/Authen/ExternalAuth.pm
         
-	Version updated to 0.07_03
+        Version updated to 0.08_01
+        
+        DoAuth method created to inherit the work that used to be
+        performed by the Auth callback for autohandler.
+
+        GetAuth reduced to an interface. Its purpose is now just to
+        check what type of service was passed and then call the
+        GetAuth method from the right package.
+
+        SSO Cookie authentication now available following the
+        integration of RT::Authen::CookieAuth. Methods updated
+        to reflect the availability of this service.
+
+    * etc/RT_SiteConfig.pm
+
+        CookieAuth settings have been merged into the ExternalAuth
+	settings hash. Example from CookieAuth has been merged in.
+
+        'auth' and 'info' settings have been deprecated and so have
+        been removed from the examples. The function they served has
+        been replaced by the ExternalAuthPriority and
+        ExternalInfoPriority variables.
+
+    * lib/RT/Authen/User_Vendor.pm
+
+        The override for the IsPassword method has been deprecated
+        and deleted. It is no longer necessary to do password tests
+        as a call to the User object. The equivalent function is
+        now provided by GetAuth in ExternalAuth.pm and is called
+        with an ExternalAuth service name, username and password.
+        Currently, this only needs to be called by DoAuth in
+        ExternalAuth.pm
+
+        While RT::Authen::ExternalAuth used to be used to integrate
+        internal RT authentication with an external method as a single
+        operation, this causes a lack of modularity. Now ExternalAuth
+        is only concerned with its own authentication methods and if
+        they fail then RT will decide to do fallback to internal
+        authentication on its own.
+
+    * html/Callbacks/ExternalAuth/autohandler/Auth
+
+        Workaround for RT versions 3.8.0 and 3.8.1 removed.
+        RT::Authen::ExternalAuth v0.08 will be officially compatible
+        only with versions 3.8.2 and up.
+
+        All functionality has been replaced by a call to ExternalAuth.pm's
+        DoAuth method. This is permitted by the passing of a reference to
+        the current session variable. DoAuth simply modifies that variable
+        as necessary to perform its function. Any data returned is purely
+        informational.
+
+    * README
+
+        Updated to include basic information on SSO cookies.
+
+    * Makefile.PL
+
+        Updated to reflect the integration of RT::Authen::CookieAuth.
 
 v0.07_02 2008-12-22    Kevin Falcone <falcone@cpan.org>
 
     * html/Callbacks/ExternalAuth/autohandler/Auth
-		
+
         Make the workaround needed for 3.8.1 work on 3.8.2
 
 v0.07_01 2008-11-06    Mike Peachey <zordrak@cpan.org>
@@ -20,7 +80,7 @@ v0.07_01 2008-11-06    Mike Peachey <zordrak@cpan.org>
     * ALL
       
         Complete code refactoring and updates for RT-3.8.x
-	compatability.
+        compatability.
 
 v0.06    2008-11-01    Mike Peachey <zordrak@cpan.org>
 

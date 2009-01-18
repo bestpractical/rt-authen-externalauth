@@ -20,6 +20,12 @@ But it has been designed so that it should work with ANY
 LDAP service and ANY DBI-drivable database, based upon the
 configuration given in your $RTHOME/etc/RT_SiteConfig.pm
 
+As of v0.08 ExternalAuth also allows you to pull a browser
+cookie value and test it against a DBI data source allowing
+the use of cookies for Single Sign-On (SSO) authentication.
+This is due to the merging of RT::Authen::ExternalAuth and
+RT::Authen::CookieAuth.
+
 
 INSTALLATION
 

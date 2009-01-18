@@ -3,7 +3,8 @@
 # if successfully confirmed by any service - no more services
 # are checked.
 Set($ExternalAuthPriority,  [   'My_LDAP',
-                                'My_MySQL'
+                                'My_MySQL',
+                                'My_SSO_Cookie'
                             ]
 );
 
@@ -11,7 +12,10 @@ Set($ExternalAuthPriority,  [   'My_LDAP',
 # should be used to get information about users. This includes
 # RealName, Tel numbers etc, but also whether or not the user
 # should be considered disabled. 
+#
 # Once user info is found, no more services are checked.
+#
+# You CANNOT use a SSO cookie for authentication.
 Set($ExternalInfoPriority,  [   'My_MySQL',
                                 'My_LDAP'
                             ]
@@ -35,12 +39,8 @@ Set($AutoCreateNonExternalUsers,    0);
 #
 Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                 'My_MySQL'   =>  {      ## GENERIC SECTION
-                                                        # The type of service (db/ldap) 
+                                                        # The type of service (db/ldap/cookie) 
                                                         'type'                      =>  'db',
-                                                        # Should the service be used for authentication?
-                                                        'auth'                      =>  1,
-                                                        # Should the service be used for information?
-                                                        'info'                      =>  1,
                                                         # The server hosting the service
                                                         'server'                    =>  'server.domain.tld',
                                                         ## SERVICE-SPECIFIC SECTION
@@ -91,10 +91,6 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                 'My_LDAP'       =>  {   ## GENERIC SECTION
                                                         # The type of service (db/ldap/cookie) 
                                                         'type'                      =>  'ldap',
-                                                        # Should the service be used for authentication?
-                                                        'auth'                      =>  1,
-                                                        # Should the service be used for information?
-                                                        'info'                      =>  1,
                                                         # The server hosting the service
                                                         'server'                    =>  'server.domain.tld',
                                                         ## SERVICE-SPECIFIC SECTION
@@ -152,6 +148,28 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                                                             'Zip' => 'postalCode',
                                                                                             'Country' => 'co'
                                                                                         }
+                                                    }
+                                # An example SSO cookie service
+                                'My_SSO_Cookie'  => {   # # The type of service (db/ldap/cookie)
+                                                        'type'                      =>  'cookie',
+                                                        # The name of the cookie to be used
+                                                        'name'                      =>  'loginCookieValue',
+                                                        # The users table
+                                                        'u_table'                   =>  'users',
+                                                        # The username field in the users table
+                                                        'u_field'                   =>  'username',
+                                                        # The field in the users table that uniquely identifies a user
+                                                        # and also exists in the cookies table
+                                                        'u_match_key'               =>  'userID',
+                                                        # The cookies table
+                                                        'c_table'                   =>  'login_cookie',
+                                                        # The field that stores cookie values
+                                                        'c_field'                   =>  'loginCookieValue',
+                                                        # The field in the cookies table that uniquely identifies a user
+                                                        # and also exists in the users table
+                                                        'c_match_key'               =>  'loginCookieUserID',
+                                                        # The DB service in this configuration to use to lookup the cookie information
+                                                        'db_service_name'           =>  'My_MySQL'
                                                     }
                                 }
 );
