@@ -1,10 +1,15 @@
 <%init>
 use RT::Authen::ExternalAuth;
+use Data::Dumper;
+
 my ($val,$msg);
-unless($session{'CurrentUser'}->Id) {
-    ($val,$msg) = RT::Authen::ExternalAuth::DoAuth(\$session,\$user,\$pass);
-    # Success if $val == 1
+unless($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
+    $RT::Logger->debug("Calling DoAuth with \$user ($user) \$pass ($pass) %session (",Dumper(%session),")");
+    ($val,$msg) = RT::Authen::ExternalAuth::DoAuth(\%session,\$user,\$pass);
+    $RT::Logger->debug("Autohandler called ExternalAuth. Response: ($val, $msg)");
 }
+
+$RT::Logger->debug("Leaving ExternalAuth autohandler Auth callback. Session:",Dumper(%session));
 return;
 </%init>
 

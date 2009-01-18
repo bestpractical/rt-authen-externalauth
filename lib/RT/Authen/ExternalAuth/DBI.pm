@@ -1,5 +1,6 @@
 package RT::Authen::ExternalAuth::DBI;
 use DBI;
+use RT::Authen::ExternalAuth::DBI::Cookie;
 
 sub GetAuth {
 
@@ -316,13 +317,7 @@ sub GetCookieAuth {
     my $username = undef;
 
     # Get our cookie and database info...
-    my $config = $RT::CookieSettings;
-
-    unless ($RT::UseExternalCookieAuthService){
-        $RT::Logger->debug( "External Cookie Auth is not enabled.",
-                            "Please check your config for \$UseExternalCookieAuthService");
-        return $username;
-    }
+    my $config = shift;
 
     my $cookie_value = RT::Authen::ExternalAuth::DBI::Cookie::GetCookieVal($config->{'name'});
     unless($cookie_value){
@@ -369,7 +364,6 @@ sub GetCookieAuth {
 
     my $query = "SELECT $select_fields FROM $tables WHERE $where_statement";
     my @params = ($cookie_value);
-    my $service = 'Auth';
 
     # Use this if you need to debug the DBI SQL process
     # DBI->trace(1,'/tmp/dbi.log');

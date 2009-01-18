@@ -29,14 +29,22 @@ use RT::Authen::ExternalAuth::DBI;
 use Data::Dumper;
 
 sub DoAuth {
-    my ($session,$given_user,$given_pass) = shift;
+    my ($session,$given_user,$given_pass) = @_;
+
+    $RT::Logger->debug("Entering DoAuth. Params == \$given_user (",
+	    		Dumper($given_user),
+			") \$given_pass (",
+			Dumper($given_pass),
+			") \%session (",
+			Dumper($session),
+			")");
 
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
     my $pass_bypass = 0;
     
     # Should have checked if user is already logged in before calling this function,
     # but just in case, we'll check too.
-    return (0, "User already logged in!") if $session{'CurrentUser'}->Id;
+    return (0, "User already logged in!") if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id);
     # We don't have a logged in user. Let's try all our available methods in order.
     # last if success, next if not.
     
@@ -60,25 +68,35 @@ sub DoAuth {
         #############################################################
         if ($config->{'type'} eq 'cookie') {    
             # Currently, Cookie authentication is our only SSO method
-            $username = RT::Authen::ExternalAuth::DBI::GetCookieAuth();
+            $username = RT::Authen::ExternalAuth::DBI::GetCookieAuth($config);
         }
         #############################################################
         
         # If $username is defined, we have a good SSO $username and can
         # safely bypass the password checking later on; primarily because
         # it's VERY unlikely we even have a password to check if an SSO succeeded.
-        if defined($username) {
+        if(defined($username)) {
+	    $RT::Logger->debug("Pass not going to be checked, attempting SSO");
             $pass_bypass = 1;
         } else {
+
+	    # SSO failed and no $user was passed for a login attempt
+	    # We only don't return here because the next iteration could be an SSO attempt
+	    unless(defined($given_user)) {
+	    	$RT::Logger->debug("SSO Failed and no user to test with. Nexting");
+	    }
+
             # We don't have an SSO login, so we will be using the credentials given
             # on RT's login page to do our authentication.
-            $username = $given_user
+            $username = $given_user;
     
             # Don't continue unless the service works.
-            next unless RT::Authen::ExternalAuth::TestConnection($config);
+	    # next unless RT::Authen::ExternalAuth::TestConnection($config);
 
             # Don't continue unless the $username exists in the external service
-            next unless RT::Authen::ExternalAuth::CheckExist($username, $config);
+
+	    $RT::Logger->debug("Calling UserExists with \$username ($username) and \$service ($service)");
+            next unless RT::Authen::ExternalAuth::UserExists($username, $service);
         }
 
         ####################################################################
@@ -90,18 +108,18 @@ sub DoAuth {
 
         # Does user already exist internally to RT?
         $session{'CurrentUser'} = RT::CurrentUser->new();
-        $session{'CurrentUser'}->Load($user);
+        $session{'CurrentUser'}->Load($username);
 
         # Unless we have loaded a valid user with a UserID create one.
         unless ($session{'CurrentUser'}->Id) {
 			my $UserObj = RT::User->new($RT::SystemUser);
         	my ($val, $msg) = 
               $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
-                               Name   => $user,
-                               Gecos  => $user,
+                               Name   => $username,
+                               Gecos  => $username,
                               );
             unless ($val) {
-                $RT::Logger->error( "Couldn't create user $user: $msg" );
+                $RT::Logger->error( "Couldn't create user $username: $msg" );
                 next;
             }
             $RT::Logger->info(  "Autocreated external user",
@@ -111,9 +129,9 @@ sub DoAuth {
                                 ")");
             
             $RT::Logger->debug("Loading new user (",
-            					$user,
+            					$username,
             					") into current session");
-            $session{'CurrentUser'}->Load($user);
+            $session{'CurrentUser'}->Load($username);
         } 
         
         ####################################################################
@@ -177,7 +195,7 @@ sub DoAuth {
     if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
             
             $RT::Logger->info(  "Successful login for",
-                                $user,
+                                $username,
                                 "from",
                                 $ENV{'REMOTE_ADDR'});
             # Do not delete the session. User stays logged in and
@@ -190,6 +208,7 @@ sub DoAuth {
             # which will in turn call IsExternalPassword
     }
     
+    $RT::Logger->debug("End of ExternalAuth DoAuth. State of \%session:",Dumper(%session));
     return (1, "Successful login");
 }
 
@@ -295,6 +314,31 @@ sub GetAuth {
     }
     
     return $success; 
+}
+
+sub UserExists {
+
+    # Request a username/password check from the specified service
+    # This is only valid for non-SSO services.
+
+    my ($service,$username) = @_;
+
+    my $success = 0;
+
+    # Get the full configuration for that service as a hashref
+    my $config = $RT::ExternalSettings->{$service};
+
+    # And then act accordingly depending on what type of service it is.
+    # Right now, there is only code for DBI and LDAP non-SSO services
+    if ($config->{'type'} eq 'db') {
+        $success = RT::Authen::ExternalAuth::DBI::UserExists($username,$service);
+    } elsif ($config->{'type'} eq 'ldap') {
+        $success = RT::Authen::ExternalAuth::LDAP::UserExists($username,$service);
+    } else {
+        $RT::Logger->debug("Invalid service type for UserExists:",$service);
+    }
+
+    return $success;
 }
 
 sub UserDisabled {

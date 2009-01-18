@@ -148,7 +148,7 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                                                             'Zip' => 'postalCode',
                                                                                             'Country' => 'co'
                                                                                         }
-                                                    }
+                                                    },
                                 # An example SSO cookie service
                                 'My_SSO_Cookie'  => {   # # The type of service (db/ldap/cookie)
                                                         'type'                      =>  'cookie',
