@@ -177,9 +177,9 @@ sub CanonicalizeUserInfo {
         $RT::Logger->debug( "LDAP Filter invalid or not present.");
     }
 
-    unless ($base) {
+    unless (defined($base)) {
         $RT::Logger->critical(  (caller(0))[3],
-                                "No base given");
+                                "LDAP baseDN not defined");
         # Drop out to the next external information service
         return ($found, %params);
     }
