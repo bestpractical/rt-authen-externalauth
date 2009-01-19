@@ -27,14 +27,14 @@ use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
 
 use strict;
-use warnings;
 
 sub DoAuth {
     my ($session,$given_user,$given_pass) = @_;
 
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
     my $pass_bypass = 0;
-    
+    my $success = 0;
+
     # Should have checked if user is already logged in before calling this function,
     # but just in case, we'll check too.
     return (0, "User already logged in!") if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id);
@@ -46,6 +46,8 @@ sub DoAuth {
     
     # For each of those services..
     foreach my $service (@auth_services) {
+
+	$pass_bypass = 0;
 
         # Get the full configuration for that service as a hashref
         my $config = $RT::ExternalSettings->{$service};
@@ -68,7 +70,8 @@ sub DoAuth {
         # If $username is defined, we have a good SSO $username and can
         # safely bypass the password checking later on; primarily because
         # it's VERY unlikely we even have a password to check if an SSO succeeded.
-        if(defined($username)) {
+        $pass_bypass = 0;
+	if(defined($username)) {
 	    $RT::Logger->debug("Pass not going to be checked, attempting SSO");
             $pass_bypass = 1;
         } else {
@@ -77,6 +80,7 @@ sub DoAuth {
 	    # We only don't return here because the next iteration could be an SSO attempt
 	    unless(defined($given_user)) {
 	    	$RT::Logger->debug("SSO Failed and no user to test with. Nexting");
+		next;
 	    }
 
             # We don't have an SSO login, so we will be using the credentials given
@@ -88,8 +92,8 @@ sub DoAuth {
 
             # Don't continue unless the $username exists in the external service
 
-            my $user_exists = RT::Authen::ExternalAuth::UserExists($username,$service);
-	    next unless $user_exists;
+	    $RT::Logger->debug("Calling UserExists with \$username ($username) and \$service ($service)");
+            next unless RT::Authen::ExternalAuth::UserExists($username, $service);
         }
 
         ####################################################################
@@ -133,13 +137,17 @@ sub DoAuth {
         # If we successfully used an SSO service, then authentication
         # succeeded. If we didn't then, success is determined by a password
         # test.
-        my $success;
-        if($pass_bypass) {
+        $success = 0;
+	if($pass_bypass) {
+            $RT::Logger->debug("Password check bypassed due to SSO method being in use");
             $success = 1;
         } else {
+            $RT::Logger->debug("Password validation required for service - Executing...");
             $success = RT::Authen::ExternalAuth::GetAuth($service,$username,$given_pass);
         }
-        
+       
+        $RT::Logger->debug("Password Validation Check Result: ",$success);
+
         # If the password check succeeded then this is our authoritative service
         # and we proceed to user information update and login.
         last if $success;
@@ -149,7 +157,12 @@ sub DoAuth {
     # get a full, valid user from an authoritative external source.
     unless ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
         delete $session->{'CurrentUser'};
-        return (0, "Failed to authenticate externally");
+        return (0, "No User");
+    }
+
+    unless($success) {
+        delete $session->{'CurrentUser'};
+	return (0, "Password Invalid");
     }
     
     # Otherwise we succeeded.
@@ -299,8 +312,10 @@ sub GetAuth {
     # Right now, there is only code for DBI and LDAP non-SSO services
     if ($config->{'type'} eq 'db') {    
         $success = RT::Authen::ExternalAuth::DBI::GetAuth($service,$username,$password);
+	$RT::Logger->debug("DBI password validation result:",$success);
     } elsif ($config->{'type'} eq 'ldap') {
         $success = RT::Authen::ExternalAuth::LDAP::GetAuth($service,$username,$password);
+	$RT::Logger->debug("LDAP password validation result:",$success);
     } else {
         $RT::Logger->error("Invalid service type for GetAuth:",$service);
     }
@@ -442,7 +457,7 @@ sub CanonicalizeUserInfo {
             unless(defined($args->{$rt_attr})) {
                 $RT::Logger->debug("This attribute (",
                                     $rt_attr,
-                                    ") is not defined in the attr_match_list for this service, or is null (",
+                                    ") is null or incorrectly defined in the attr_map for this service (",
                                     $service,
                                     ")");
                 next;

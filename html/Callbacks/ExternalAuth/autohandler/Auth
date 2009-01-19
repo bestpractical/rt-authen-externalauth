@@ -1,6 +1,5 @@
 <%init>
 use RT::Authen::ExternalAuth;
-use Data::Dumper;
 
 my ($val,$msg);
 unless($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {

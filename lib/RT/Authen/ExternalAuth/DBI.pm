@@ -4,7 +4,6 @@ use DBI;
 use RT::Authen::ExternalAuth::DBI::Cookie;
 
 use strict;
-use warnings;
 
 sub GetAuth {
 
@@ -325,6 +324,7 @@ sub GetCookieAuth {
     my $cookie_name = $config->{'name'};
 
     my $cookie_value = RT::Authen::ExternalAuth::DBI::Cookie::GetCookieVal($cookie_name);
+
     unless($cookie_value){
         return $username;
     }

@@ -5,7 +5,6 @@ use Net::LDAP::Util qw(ldap_error_name);
 use Net::LDAP::Filter;
 
 use strict;
-use warnings;
 
 require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
@@ -178,7 +177,7 @@ sub CanonicalizeUserInfo {
         $RT::Logger->debug( "LDAP Filter invalid or not present.");
     }
 
-    unless (defined($base)) {
+    unless ($base) {
         $RT::Logger->critical(  (caller(0))[3],
                                 "No base given");
         # Drop out to the next external information service
