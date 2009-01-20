@@ -31,6 +31,16 @@ use strict;
 sub DoAuth {
     my ($session,$given_user,$given_pass) = @_;
 
+    unless(defined($RT::ExternalAuthPriority)) {
+        return (0, "ExternalAuthPriority not defined, please check your configuration file.");
+    }
+
+    my $no_info_check = 0;
+    unless(defined($RT::ExternalInfoPriority)) {
+        $RT::Logger->debug("ExternalInfoPriority not defined. User information (including user enabled/disabled cannot be externally-sourced");
+        $no_info_check = 1;
+    }
+
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
     my $pass_bypass = 0;
     my $success = 0;
@@ -182,10 +192,16 @@ sub DoAuth {
         # the database, but more importantly, UpdateFromExternal will check 
         # whether the user is disabled or not which we have not been able to 
         # do during auto-create
-        
-        # Note that UpdateUserInfo does not care how we authenticated the user
-        # It will look up user info from whatever is specified in $RT::ExternalInfoPriority
-        my ($updated,$update_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session->{'CurrentUser'}->Name);
+
+	# These are not currently used, but may be used in the future.
+	my $info_updated = 0;
+	my $info_updated_msg = "User info not updated";
+
+        unless($no_info_check) {
+            # Note that UpdateUserInfo does not care how we authenticated the user
+            # It will look up user info from whatever is specified in $RT::ExternalInfoPriority
+            ($info_updated,$info_updated_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session->{'CurrentUser'}->Name);
+        }
                 
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!
