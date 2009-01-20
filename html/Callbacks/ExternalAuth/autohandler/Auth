@@ -1,5 +1,24 @@
+<%once>
+my $loaded_user = 0;
+</%once>
 <%init>
+
 use RT::Authen::ExternalAuth;
+
+###################################################################################
+# Work around a bug in the RT 3.8.0 and 3.8.1 plugin system (fixed in 3.8.2)      #
+# Temporarily force RT to reload RT::User, since it isn't being loaded            #
+# correctly as a plugin.                                                          #
+###################################################################################
+unless ($loaded_user) {                                                           
+    $RT::Logger->error("Working around bug in RT and reloading RT::User");
+    $loaded_user++;
+    delete $INC{'RT/User.pm'};
+    delete $INC{'RT/User_Overlay.pm'};
+    delete $INC{'RT/User_Vendor.pm'};
+    require RT::User;
+}
+###################################################################################
 
 my ($val,$msg);
 unless($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
