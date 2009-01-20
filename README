@@ -3,12 +3,19 @@ RT-Authen-ExternalAuth
 This module provides the ability to authenticate RT users
 against one or more external data sources at once. It will
 also allow information about that user to be loaded from
-the same, or any other available, source.
+the same, or any other available, source as well as allowing
+multple redundant servers for each method.
 
 The extension currently supports authentication and 
 information from LDAP via the Net::LDAP module, and from
 any data source that an installed DBI driver is available
 for. 
+
+It is also possible to use cookies set by an alternate
+application for Single Sign-On (SSO) with that application.
+For example, you may integrate RT with your own website login
+system so that once users log in to your website, they will be
+automagically logged in to RT when they access it.
 
 It was originally designed and tested against: 
 
@@ -22,9 +29,13 @@ configuration given in your $RTHOME/etc/RT_SiteConfig.pm
 
 As of v0.08 ExternalAuth also allows you to pull a browser
 cookie value and test it against a DBI data source allowing
-the use of cookies for Single Sign-On (SSO) authentication.
-This is due to the merging of RT::Authen::ExternalAuth and
-RT::Authen::CookieAuth.
+the use of cookies for Single Sign-On (SSO) authentication
+with another application or website login system. This is
+due to the merging of RT::Authen::ExternalAuth and
+RT::Authen::CookieAuth. For example, you may integrate RT
+with your own website login system so that once users log in
+to your website, they will be automagically logged in to RT 
+when they access it.
 
 
 INSTALLATION
@@ -34,6 +45,10 @@ To install this module, run the following commands:
     perl Makefile.PL
     make
     make install
+
+I recommend:
+RT::Authen::ExternalAuth v0.05 for RT-3.6.x
+RT::Authen::ExternalAuth v0.08+ for RT-3.8.x
 
 If you are using RT 3.8.x, you need to enable this
 module by adding RT::Authen::ExternalAuth to your

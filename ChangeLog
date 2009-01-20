@@ -1,4 +1,4 @@
-v0.08_01  2009-01-18    Mike Peachey <zordrak@cpan.org>
+v0.08_01  2009-01-20    Mike Peachey <zordrak@cpan.org>
     
     * ChangeLog
         
@@ -17,9 +17,31 @@ v0.08_01  2009-01-18    Mike Peachey <zordrak@cpan.org>
         check what type of service was passed and then call the
         GetAuth method from the right package.
 
+        Authentication now halts and returns with error if
+        ExternalAuthPriority is not set. This prevents a fairly
+        useless compile error and logs an explanation instead.
+
+	Information lookup is now bypassed and logged if
+        ExternalInfoPriority is not set, preventing another useless
+        compile error and replacing it with an explanation.
+
         SSO Cookie authentication now available following the
         integration of RT::Authen::CookieAuth. Methods updated
         to reflect the availability of this service.
+
+    * lib/RT/Authen/ExternalAuth/DBI/Cookie.pm
+
+        File added to house the cookie grab. While SSO cookies are
+        a function of DBI authentication (at the moment at least)
+        there is no need for DBI.pm to use CGI::Cookie for this one
+        purpose. With the future possibility of futher cookie
+        functions as well, I decided it deserved its own module.
+
+    * lib/RT/Authen/ExternalAuth/LDAP.pm
+
+        Changed an unless($base) to unless(defined($base)) to allow
+        for the use of a defined, but empty, baseDN so that an LDAP
+        directory may be searched from the root.
 
     * etc/RT_SiteConfig.pm
 
