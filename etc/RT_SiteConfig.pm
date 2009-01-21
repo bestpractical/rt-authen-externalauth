@@ -77,7 +77,7 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         # are ['0','1','2','disabled'] then the user will be disabled if their
                                                         # user_status is set to '0','1','2' or the string 'disabled'.
                                                         # Otherwise, they will be considered enabled.
-                                                        'd_field'                   =>  'userSupportAccess',
+                                                        'd_field'                   =>  'disabled',
                                                         'd_values'                  =>  ['0'],
                                                         ## RT ATTRIBUTE MATCHING SECTION
                                                         # The list of RT attributes that uniquely identify a user
