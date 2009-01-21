@@ -17,6 +17,7 @@ sub GetAuth {
     my $db_p_field 	    = $config->{'p_field'};
     my $db_p_enc_pkg    = $config->{'p_enc_pkg'};
     my $db_p_enc_sub    = $config->{'p_enc_sub'};
+    my $db_p_salt       = $config->{'p_salt'};
 
     # Set SQL query and bind parameters
     my $query = "SELECT $db_u_field,$db_p_field FROM $db_table WHERE $db_u_field=?";
@@ -74,12 +75,23 @@ sub GetAuth {
         # If the package given can perform the subroutine given, then use it to compare the
         # password given with the password pulled from the database.
         # Jump to the next external authentication service if they don't match
-        if(${encrypt}->($password) ne $pass_from_db){
-            $RT::Logger->info(  $service,
-                                "AUTH FAILED", 
-                                $username, 
-                                "Password Incorrect");
-            return 0;
+        if(defined($db_p_salt)) {
+            $RT::Logger->debug("Using salt:",$db_p_salt);
+            if(${encrypt}->($password,$db_p_salt) ne $pass_from_db){
+                $RT::Logger->info(  $service,
+                                    "AUTH FAILED", 
+                                    $username, 
+                                    "Password Incorrect");
+                return 0;
+            }
+        } else {
+            if(${encrypt}->($password) ne $pass_from_db){
+                $RT::Logger->info(  $service,
+                                    "AUTH FAILED", 
+                                    $username, 
+                                    "Password Incorrect");
+                return 0;
+            }
         }
     } else {
         # If the encryption package can't perform the request subroutine,

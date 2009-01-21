@@ -68,6 +68,10 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         # encryption subroutine you can load in your perl installation
                                                         'p_enc_pkg'                 =>  'Crypt::MySQL',
                                                         'p_enc_sub'                 =>  'password',
+                                                        # If your p_enc_sub takes a salt as a second parameter, 
+                                                        # uncomment this line to add your salt
+                                                        #'p_salt'                    =>  'SALT',
+                                                        #
                                                         # The field and values in the table that determines if a user should
                                                         # be disabled. For example, if the field is 'user_status' and the values
                                                         # are ['0','1','2','disabled'] then the user will be disabled if their
