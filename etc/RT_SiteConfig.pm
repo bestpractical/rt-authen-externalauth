@@ -64,7 +64,7 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         # e.g. if the passwords are stored using the MySQL v3.23 "PASSWORD"
                                                         # function, then you will need Crypt::MySQL::password, but for the
                                                         # MySQL4+ password function you will need Crypt::MySQL::password41
-                                                        # Alternatively, you could use Crypt::MD5::md5_hex or any other
+                                                        # Alternatively, you could use Digest::MD5::md5_hex or any other
                                                         # encryption subroutine you can load in your perl installation
                                                         'p_enc_pkg'                 =>  'Crypt::MySQL',
                                                         'p_enc_sub'                 =>  'password',
