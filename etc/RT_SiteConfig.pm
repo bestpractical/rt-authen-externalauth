@@ -118,6 +118,8 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         #
                                                         # Should we try to use TLS to encrypt connections?
                                                         'tls'                       =>  0,
+                                                        # SSL Version to provide to Net::SSLeay *if* using SSL
+                                                        'ssl_version'               =>  3,
                                                         # What other args should I pass to Net::LDAP->new($host,@args)?
                                                         'net_ldap_args'             => [    version =>  3   ],
                                                         # Does authentication depend on group membership? What group name?
