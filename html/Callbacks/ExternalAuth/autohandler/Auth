@@ -11,7 +11,7 @@ use RT::Authen::ExternalAuth;
 # correctly as a plugin.                                                          #
 ###################################################################################
 unless ($loaded_user) {                                                           
-    $RT::Logger->error("Working around bug in RT and reloading RT::User");
+    $RT::Logger->debug("Reloading RT::User to work around a bug in RT-3.8.0 and RT-3.8.1");
     $loaded_user++;
     delete $INC{'RT/User.pm'};
     delete $INC{'RT/User_Overlay.pm'};
