@@ -1,3 +1,34 @@
+v0.08     2009-01-24    Mike Peachey <zordrak@cpan.org>
+
+    * lib/RT/Authen/ExternalAuth.pm
+
+        Version updated to 0.08
+
+    * ChangeLog
+
+        Added entry for v0.08
+
+    * etc/RT_SiteConfig.pm
+
+        Added ssl_version to example LDAP config as it is used by
+        the code, but had not been demonstrated.
+
+        s/Crypt::MD5::md5_hex/Digest::MD5::md5_hex/ in example DBI
+        config.
+
+        Added the ability to provide a static salt to the p_enc_sub
+        however this behavious may be reviewed in future releases
+        to allow integration with better encryption methods.
+
+        s/userSupportAccess/disabled/ in example DBI config.
+
+    * html/Callbacks/ExternalAuth/autohandler/Auth
+
+        Modified the log message regarding the RT-3.8.[01] plugin
+        bug from error level to debug level and modified the text
+        of the message to be more clear for RT-3.8.2+ users.
+
+
 v0.08_01  2009-01-20    Mike Peachey <zordrak@cpan.org>
     
     * ChangeLog
