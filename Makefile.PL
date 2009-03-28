@@ -7,8 +7,6 @@ author('Mike Peachey <zordrak@cpan.org>');
 
 all_from('lib/RT/Authen/ExternalAuth.pm');
 
-requires('RT');
-
 features(
   'SSL LDAP Connections' => [
     -default => 0,
