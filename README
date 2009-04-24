@@ -59,7 +59,7 @@ Set( @Plugins, qw(RT::Authen::ExternalAuth) );
 Once installed, you should view the file:
     
 3.4/3.6    $RTHOME/local/etc/ExternalAuth/RT_SiteConfig.pm
-3.8        $RTHOME/local/plugins/RT-Auth-ExternalAuth/etc/RT_SiteConfig.pm
+3.8        $RTHOME/local/plugins/RT-Authen-ExternalAuth/etc/RT_SiteConfig.pm
 
 Then use the examples provided to prepare your own custom 
 configuration which should be added to your site configuration in
