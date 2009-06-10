@@ -7,18 +7,26 @@ author('Mike Peachey <zordrak@cpan.org>');
 
 all_from('lib/RT/Authen/ExternalAuth.pm');
 
-features(
-  'SSL LDAP Connections' => [
+feature 'SSL LDAP Connections' =>
     -default => 0,
-    'Net::SSLeay' => 0],
-  'External LDAP Sources' => [
+    recommends('Net::SSLeay' => 0),
+    ;
+
+feature 'External LDAP Sources' => 
     -default => 1,
-    'Net::LDAP' => 0],
-  'External DBI Sources' => [
+    recommends('Net::LDAP' => 0),
+    ;
+
+feature 'External DBI Sources' =>
     -default => 1,
-    'DBI' => 0],
-  'SSO Cookie Sources' => [
+    recommends('DBI' => 0),
+    ;
+
+feature 'SSO Cookie Sources' => 
     -default => 1,
-    'CGI::Cookies' => 0]
-);
+    recommends('CGI::Cookies' => 0),
+    ;
+
+&auto_install();
+
 &WriteAll;
