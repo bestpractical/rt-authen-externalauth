@@ -545,19 +545,4 @@ sub CanonicalizeUserInfo {
    
 }
 
-{
-    if ( $RT::VERSION gt '3.8.8' ) {
-        no warnings 'redefine';
-        require RT::Interface::Web;
-        my $orig = \&RT::Interface::Web::MaybeShowNoAuthPage;
-        *RT::Interface::Web::MaybeShowNoAuthPage = sub {
-            my $m = $HTML::Mason::Commands::m;
-            return
-              if $m->base_comp->path eq '/NoAuth/Login.html'
-                  && $m->cgi_object->request_method eq 'POST';
-            return $orig->(@_);
-        };
-    }
-}
-
 1;
