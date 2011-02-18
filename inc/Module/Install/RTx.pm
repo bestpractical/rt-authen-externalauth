@@ -8,7 +8,7 @@ no warnings 'once';
 
 use Module::Install::Base;
 use base 'Module::Install::Base';
-our $VERSION = '0.24';
+our $VERSION = '0.27';
 
 use FindBin;
 use File::Glob     ();
@@ -42,15 +42,16 @@ sub RTx {
         $INC{'RT.pm'} = "$RT::LocalPath/lib/RT.pm";
     } else {
         local @INC = (
-            @INC,
             $ENV{RTHOME} ? ( $ENV{RTHOME}, "$ENV{RTHOME}/lib" ) : (),
+            @INC,
             map { ( "$_/rt3/lib", "$_/lib/rt3", "$_/lib" ) } grep $_,
             @prefixes
         );
         until ( eval { require RT; $RT::LocalPath } ) {
             warn
                 "Cannot find the location of RT.pm that defines \$RT::LocalPath in: @INC\n";
-            $_ = $self->prompt("Path to your RT.pm:") or exit;
+            $_ = $self->prompt("Path to directory containing your RT.pm:") or exit;
+            $_ =~ s/\/RT\.pm$//;
             push @INC, $_, "$_/rt3/lib", "$_/lib/rt3", "$_/lib";
         }
     }
@@ -59,6 +60,7 @@ sub RTx {
     my $local_lib_path = "$RT::LocalPath/lib";
     print "Using RT configuration from $INC{'RT.pm'}:\n";
     unshift @INC, "$RT::LocalPath/lib" if $RT::LocalPath;
+    unshift @INC, $lib_path;
 
     $RT::LocalVarPath  ||= $RT::VarPath;
     $RT::LocalPoPath   ||= $RT::LocalLexiconPath;
@@ -188,4 +190,4 @@ sub RTxInit {
 
 __END__
 
-#line 302
+#line 304
