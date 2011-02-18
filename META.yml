@@ -19,11 +19,12 @@ no_index:
     - html
     - inc
 recommends:
-  CGI::Cookies: 0
+  CGI::Cookie: 0
   DBI: 0
   Net::LDAP: 0
   Net::SSLeay: 0
 requires:
+  CGI::Cookie: 0
   DBI: 0
   Net::LDAP: 0
   Net::SSLeay: 0
