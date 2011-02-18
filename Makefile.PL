@@ -24,7 +24,7 @@ feature 'External DBI Sources' =>
 
 feature 'SSO Cookie Sources' => 
     -default => 1,
-    recommends('CGI::Cookies' => 0),
+    recommends('CGI::Cookie' => 0),
     ;
 
 &auto_install();
