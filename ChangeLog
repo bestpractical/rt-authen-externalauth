@@ -1,4 +1,15 @@
-v0.09_01  2009-03-28    Mike Peachey <zordrak@cpan.org>
+v0.08_01 2011-02-18 Kevin Falcone
+	* Testing prerelase for 0.09, since 0.09_01 never made it to CPAN
+	* Upgrade Module::Install
+	* Remove and then replace a requires('RT') since Module::Install::RTx now
+	  handles that
+	* Fix the features/recommends to work with modern MI
+	* Use CSS to hide password box for ExternalAuth users so they don't think
+	  they can change their password via RT
+	* Fix for 3.8.9/4.0.0 to work with new Login infrastructure
+
+
+NEVER RELEASED v0.09_01  2009-03-28    Mike Peachey <zordrak@cpan.org>
 
     * Makefile.PL
     

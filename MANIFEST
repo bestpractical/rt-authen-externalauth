@@ -1,10 +1,16 @@
 ChangeLog
 etc/RT_SiteConfig.pm
 html/Callbacks/ExternalAuth/autohandler/Auth
+html/Callbacks/ExternalAuth/autohandler/Session
+html/Callbacks/ExternalAuth/Elements/Header/Head
+html/Elements/DoAuth
+inc/Module/AutoInstall.pm
 inc/Module/Install.pm
+inc/Module/Install/AutoInstall.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
 inc/Module/Install/Fetch.pm
+inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
 inc/Module/Install/RTx.pm
@@ -12,8 +18,8 @@ inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/RT/Authen/ExternalAuth.pm
 lib/RT/Authen/ExternalAuth/DBI.pm
-lib/RT/Authen/ExternalAuth/LDAP.pm
 lib/RT/Authen/ExternalAuth/DBI/Cookie.pm
+lib/RT/Authen/ExternalAuth/LDAP.pm
 lib/RT/User_Vendor.pm
 LICENSE
 Makefile.PL
