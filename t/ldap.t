@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 6;
+use RT::Test tests => 9;
 use Net::LDAP;
 use RT::Authen::ExternalAuth;
 
@@ -50,15 +50,36 @@ RT->Config->Set(
     }
 );
 my ( $baseurl, $m ) = RT::Test->started_ok();
-ok( !$m->login( 'fakeuser', 'password' ), 'not logged in with fake user' );
-ok( $m->login( 'testuser', 'password' ), 'logged in' );
-$m->logout;
 
-$m->get_ok( $baseurl, 'base url' );
-$m->submit_form(
-    form_number => 1,
-    fields      => { user => 'testuser', pass => 'password', },
-);
-$m->text_contains('Logout', 'logged in via form');
+
+diag "test uri login";
+{
+    ok( !$m->login( 'fakeuser', 'password' ), 'not logged in with fake user' );
+    ok( $m->login( 'testuser', 'password' ), 'logged in' );
+}
+
+diag "test form login";
+{
+    $m->logout;
+    $m->get_ok( $baseurl, 'base url' );
+    $m->submit_form(
+        form_number => 1,
+        fields      => { user => 'testuser', pass => 'password', },
+    );
+    $m->text_contains( 'Logout', 'logged in via form' );
+}
+
+diag "test redirect after login";
+{
+    $m->logout;
+    $m->get_ok( $baseurl . '/SelfService/Closed.html', 'closed tickets page' );
+    $m->submit_form(
+        form_number => 1,
+        fields      => { user => 'testuser', pass => 'password', },
+    );
+    $m->text_contains( 'Logout', 'logged in' );
+    is( $m->uri, $baseurl . '/SelfService/Closed.html' );
+}
 
 $ldap->unbind();
+
