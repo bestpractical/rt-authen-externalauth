@@ -545,4 +545,13 @@ sub CanonicalizeUserInfo {
    
 }
 
+{
+    no warnings 'redefine';
+    *RT::User::CanonicalizeUserInfo = sub {
+        my $self = shift;
+        my $args = shift;
+        return ( CanonicalizeUserInfo( $self, $args ) );
+    };
+}
+
 1;
