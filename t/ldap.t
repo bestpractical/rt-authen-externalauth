@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 9;
+use RT::Test tests => 10;
 use Net::LDAP;
 use RT::Authen::ExternalAuth;
 
@@ -31,6 +31,7 @@ RT->Config->Set( Plugins                     => 'RT::Authen::ExternalAuth' );
 RT->Config->Set( ExternalAuthPriority        => ['My_LDAP'] );
 RT->Config->Set( ExternalServiceUsesSSLorTLS => 0 );
 RT->Config->Set( AutoCreateNonExternalUsers  => 0 );
+RT->Config->Set( AutoCreate  => undef );
 RT->Config->Set(
     ExternalSettings => {    # AN EXAMPLE DB SERVICE
         'My_LDAP' => {
@@ -49,8 +50,8 @@ RT->Config->Set(
         },
     }
 );
-my ( $baseurl, $m ) = RT::Test->started_ok();
 
+my ( $baseurl, $m ) = RT::Test->started_ok();
 
 diag "test uri login";
 {
@@ -69,6 +70,8 @@ diag "test form login";
     $m->text_contains( 'Logout', 'logged in via form' );
 }
 
+is( $m->uri, $baseurl . '/SelfService/' , 'selfservice page' );
+
 diag "test redirect after login";
 {
     $m->logout;
@@ -80,6 +83,7 @@ diag "test redirect after login";
     $m->text_contains( 'Logout', 'logged in' );
     is( $m->uri, $baseurl . '/SelfService/Closed.html' );
 }
+
 
 $ldap->unbind();
 
