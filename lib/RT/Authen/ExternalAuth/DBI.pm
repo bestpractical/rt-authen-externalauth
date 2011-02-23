@@ -434,7 +434,13 @@ sub _GetBoundDBIObj {
     my $dbi_driver    = $config->{'dbi_driver'};
 
     # Use config to create a DSN line for the DBI connection
-    my $dsn = "dbi:$dbi_driver:database=$db_database;host=$db_server;port=$db_port";
+    my $dsn;
+    if ( $dbi_driver eq 'SQLite' ) {
+        $dsn = "dbi:$dbi_driver:$db_database";
+    }
+    else {
+        $dsn = "dbi:$dbi_driver:database=$db_database;host=$db_server;port=$db_port";
+    }
 
     # Now let's get connected
     my $dbh = DBI->connect($dsn, $db_user, $db_pass,{RaiseError => 1, AutoCommit => 0 })
