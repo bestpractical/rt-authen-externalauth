@@ -69,7 +69,7 @@ diag "test form login";
     $m->text_contains( 'Logout', 'logged in via form' );
 }
 
-is( $m->uri, $baseurl . '/', 'not selfservice page' );
+like( $m->uri, qr!$baseurl/(index\.html)?!, 'privileged home page' );
 
 $ldap->unbind();
 
