@@ -88,3 +88,4 @@ diag "test redirect after login";
     is( $m->uri, $baseurl . '/SelfService/Closed.html' );
 }
 
+$RT::Test::Web::DESTROY++; # not test warnings

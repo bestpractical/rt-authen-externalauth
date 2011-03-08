@@ -87,3 +87,4 @@ diag "test redirect after login";
 
 $ldap->unbind();
 
+$RT::Test::Web::DESTROY++; # not test warnings

@@ -73,3 +73,4 @@ like( $m->uri, qr!$baseurl/(index\.html)?!, 'privileged home page' );
 
 $ldap->unbind();
 
+$RT::Test::Web::DESTROY++; # not test warnings
