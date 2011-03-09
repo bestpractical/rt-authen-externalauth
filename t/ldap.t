@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 10;
+use RT::Test;
 use Net::LDAP;
 use RT::Authen::ExternalAuth;
 
@@ -84,7 +84,6 @@ diag "test redirect after login";
     is( $m->uri, $baseurl . '/SelfService/Closed.html' );
 }
 
-
 $ldap->unbind();
 
-$RT::Test::Web::DESTROY++; # not test warnings
+$m->get_warnings;

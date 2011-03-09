@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 7;
+use RT::Test;
 use Net::LDAP;
 use RT::Authen::ExternalAuth;
 
@@ -73,4 +73,4 @@ like( $m->uri, qr!$baseurl/(index\.html)?!, 'privileged home page' );
 
 $ldap->unbind();
 
-$RT::Test::Web::DESTROY++; # not test warnings
+$m->get_warnings;

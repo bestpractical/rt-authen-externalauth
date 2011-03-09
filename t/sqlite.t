@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => 10;
+use RT::Test;
 use DBI;
 use File::Temp;
 use Digest::MD5;
@@ -88,4 +88,4 @@ diag "test redirect after login";
     is( $m->uri, $baseurl . '/SelfService/Closed.html' );
 }
 
-$RT::Test::Web::DESTROY++; # not test warnings
+$m->get_warnings;
