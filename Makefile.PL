@@ -29,6 +29,8 @@ feature 'SSO Cookie Sources' =>
 
 author_tests('xt');
 
+requires_rt('3.8.2');
+
 &auto_install();
 
 &WriteAll;

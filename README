@@ -1,5 +1,27 @@
 RT-Authen-ExternalAuth
 
+=========================
+Important Upgrading Notes:
+=========================
+
+If you are upgrading from an earlier version of this extension, you must
+remove the following file manually:
+
+  rm /opt/rt3/local/plugins/RT-Authen-ExternalAuth/lib/RT/User_Vendor.pm
+
+Otherwise you will most likely encounter an error about modifying a read
+only value and be unable to start RT.
+
+=========================
+Import Installation Notes:
+=========================
+
+If you are using RT 3.6, you want to use the 0.05 version.
+If you are using RT 3.8.0 or 3.8.1, you may have trouble installing this
+due to RT bugs related to plugins, but you may be able to use 0.08.
+Later versions of this module will not work on 3.8.0 or 3.8.1.
+
+
 This module provides the ability to authenticate RT users
 against one or more external data sources at once. It will
 also allow information about that user to be loaded from
