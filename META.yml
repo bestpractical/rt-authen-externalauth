@@ -18,6 +18,7 @@ no_index:
     - etc
     - html
     - inc
+    - xt
 recommends:
   CGI::Cookie: 0
   DBI: 0

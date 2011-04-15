@@ -27,6 +27,8 @@ feature 'SSO Cookie Sources' =>
     recommends('CGI::Cookie' => 0),
     ;
 
+author_tests('xt');
+
 &auto_install();
 
 &WriteAll;
