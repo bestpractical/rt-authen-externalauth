@@ -18,6 +18,7 @@ no_index:
     - etc
     - html
     - inc
+    - t
     - xt
 recommends:
   CGI::Cookie: 0
@@ -31,4 +32,4 @@ requires:
   Net::SSLeay: 0
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 0.08_01
+version: 0.08_02
