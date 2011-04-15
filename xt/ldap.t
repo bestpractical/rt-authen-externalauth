@@ -29,6 +29,7 @@ $ldap->add( $dn, attr => [%$entry] );
 
 RT->Config->Set( Plugins                     => 'RT::Authen::ExternalAuth' );
 RT->Config->Set( ExternalAuthPriority        => ['My_LDAP'] );
+RT->Config->Set( ExternalInfoPriority        => ['My_LDAP'] );
 RT->Config->Set( ExternalServiceUsesSSLorTLS => 0 );
 RT->Config->Set( AutoCreateNonExternalUsers  => 0 );
 RT->Config->Set( AutoCreate  => undef );
@@ -38,11 +39,11 @@ RT->Config->Set(
             'type'            => 'ldap',
             'server'          => "127.0.0.1:$ldap_port",
             'base'            => 'dc=bestpractical,dc=com',
-            'filter'          => '()',
-            'd_filter'        => '(objectClass=*)',
+            'filter'          => '(objectClass=*)',
+            'd_filter'        => '()',
             'tls'             => 0,
             'net_ldap_args'   => [ version => 3 ],
-            'attr_match_list' => [ 'uid', 'EmailAddress' ],
+            'attr_match_list' => [ 'Name', 'EmailAddress' ],
             'attr_map'        => {
                 'Name'         => 'uid',
                 'EmailAddress' => 'mail',
