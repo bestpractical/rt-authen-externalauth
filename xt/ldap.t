@@ -59,6 +59,14 @@ diag "test uri login";
     ok( !$m->login( 'fakeuser', 'password' ), 'not logged in with fake user' );
     ok( $m->login( 'testuser', 'password' ), 'logged in' );
 }
+diag "test user creation";
+{
+my $testuser = RT::User->new($RT::SystemUser);
+my ($ok,$msg) = $testuser->Load( 'testuser' );
+ok($ok,$msg);
+is($testuser->EmailAddress,'testuser@invalid.tld');
+}
+
 
 diag "test form login";
 {
