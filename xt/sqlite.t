@@ -88,4 +88,12 @@ diag "test redirect after login";
     is( $m->uri, $baseurl . '/SelfService/Closed.html' );
 }
 
+diag "test with user and pass in URL";
+{
+    $m->logout;
+    $m->get_ok( $baseurl . '/SelfService/Closed.html?user=testuser;pass=password', 'closed tickets page' );
+    $m->text_contains( 'Logout', 'logged in' );
+    is( $m->uri, $baseurl . '/SelfService/Closed.html?user=testuser;pass=password' );
+}
+
 $m->get_warnings;
