@@ -5,22 +5,37 @@ Important Upgrading Notes:
 =========================
 
 If you are upgrading from an earlier version of this extension, you must
-remove the following file manually:
+remove the following files manually:
 
-  rm /opt/rt3/local/plugins/RT-Authen-ExternalAuth/lib/RT/User_Vendor.pm
+    $RTHOME/local/plugins/RT-Authen-ExternalAuth/lib/RT/User_Vendor.pm
+    $RTHOME/local/lib/RT/User_Vendor.pm
+    $RTHOME/local/lib/RT/Authen/External_Auth.pm
 
 Otherwise you will most likely encounter an error about modifying a read
 only value and be unable to start RT.
 
+You may not have all of these files.  It depends what versions you are
+upgrading between.
+
+If you are using a vendor packaged RT, your local directories are likely
+to be somewhere under /usr/local instead of in $RTHOME so you will need
+to visit Configuration -> Tools -> System Configuration to find your
+plugin root.
+
 =========================
-Import Installation Notes:
+Import Version Notes:
 =========================
 
 If you are using RT 3.6, you want to use the 0.05 version.
-If you are using RT 3.8.0 or 3.8.1, you may have trouble installing this
-due to RT bugs related to plugins, but you may be able to use 0.08.
-Later versions of this module will not work on 3.8.0 or 3.8.1.
 
+If you are using RT 3.8.0 or 3.8.1, you may have trouble using this
+due to RT bugs related to plugins, but you may be able to use 0.08.
+
+0.08_02 or later will not work on 3.8.0 or 3.8.1
+
+=================
+About This Module
+=================
 
 This module provides the ability to authenticate RT users
 against one or more external data sources at once. It will
@@ -78,6 +93,10 @@ module by adding RT::Authen::ExternalAuth to your
 
 Set( @Plugins, qw(RT::Authen::ExternalAuth) );
 
+If you already have a @Plugins line, add RT::Authen::ExternalAuth to the
+existing list.  Adding a second @Plugins line will cause interesting
+bugs.
+
 Once installed, you should view the file:
     
 3.4/3.6    $RTHOME/local/etc/ExternalAuth/RT_SiteConfig.pm
@@ -87,25 +106,12 @@ Then use the examples provided to prepare your own custom
 configuration which should be added to your site configuration in
 $RTHOME/etc/RT_SiteConfig.pm
 
-Alternatively, you may alter the provided examples directly
-and then include the extra directives by 'requiring' the
-example file's path at the end of your RT_SiteConfig.pm
-
-
-UPGRADING
-
-If you are upgrading from 0.05 you may have some leftover
-parts of the module in 
-
-$RTHOME/local/lib/RT/User_Vendor.pm 
-$RTHOME/local/lib/RT/Authen/External_Auth.pm
-
-that will conflict with the new install and these should be removed
-
 AUTHOR
         Mike Peachey
         Jennic Ltd.
         zordrak@cpan.org
+
+        Various Best Practical Developers
 
 COPYRIGHT AND LICENCE
 
