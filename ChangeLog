@@ -1,3 +1,8 @@
+0.09 2011-05-06 Kevin Falcone
+	* compatibility fixes for 3.8.10 and 4.0.0
+	* author testsuite
+	* updated README
+
 v0.08_01 2011-02-18 Kevin Falcone
 	* Testing prerelase for 0.09, since 0.09_01 never made it to CPAN
 	* Upgrade Module::Install
