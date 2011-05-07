@@ -1,19 +1,7 @@
 use strict;
 use warnings;
 
-BEGIN {
-    eval {
-        use Net::LDAP;
-        use Net::LDAP::Server::Test;
-        1;
-    } or do {
-        use Test::More;
-        plan skip_all => 'Unable to test without LDAP modules: '. $@;
-        exit;
-    }
-}
-
-use RT::Authen::ExternalAuth::Test;
+use RT::Authen::ExternalAuth::Test ldap => 1;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 my ($server, $client) = $class->bootstrap_ldap_basics;

@@ -30,6 +30,19 @@ sub import {
         $args{'testing'} = 'RT::Authen::ExternalAuth';
     }
 
+    if ( delete $args{'ldap'} ) {
+        local $@;
+        eval {
+            require Net::LDAP;
+            require Net::LDAP::Server::Test;
+            1;
+        } or do {
+            require Test::More;
+            Test::More::plan( skip_all => 'Unable to test without LDAP modules: '. $@ );
+            exit;
+        }
+    }
+
     $class->SUPER::import( %args );
     $class->export_to_level(1);
 
