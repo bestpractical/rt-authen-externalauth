@@ -9,7 +9,6 @@ use strict;
 require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
 sub GetAuth {
-    
     my ($service, $username, $password) = @_;
     
     my $config = $RT::ExternalSettings->{$service};
@@ -36,36 +35,21 @@ sub GetAuth {
     my $ldap = _GetBoundLdapObj($config);
     return 0 unless ($ldap);
 
-    $filter = Net::LDAP::Filter->new(   '(&(' . 
+    $filter = '(&(' . 
                                         $attr_map->{'Name'} . 
                                         '=' . 
                                         escape_filter_value($username) . 
                                         ')' . 
                                         $filter . 
                                         ')'
-                                    );
+    ;
 
-    $RT::Logger->debug( "LDAP Search === ",
-                        "Base:",
-                        $base,
-                        "== Filter:", 
-                        $filter->as_string,
-                        "== Attrs:", 
-                        join(',',@attrs));
-
-    my $ldap_msg = $ldap->search(   base   => $base,
-                                    filter => $filter,
-                                    attrs  => \@attrs);
-
-    unless ($ldap_msg->code == LDAP_SUCCESS || $ldap_msg->code == LDAP_PARTIAL_RESULTS) {
-        $RT::Logger->debug( "search for", 
-                            $filter->as_string, 
-                            "failed:", 
-                            ldap_error_name($ldap_msg->code), 
-                            $ldap_msg->code);
-        # Didn't even get a partial result - jump straight to the next external auth service
-        return 0;
-    }
+    my $ldap_msg = PerformSearch(
+        $ldap,
+        base   => $base,
+        filter => $filter,
+        attrs  => \@attrs
+    ) or return 0;;
 
     unless ($ldap_msg->count == 1) {
         $RT::Logger->info(  $service,
@@ -113,33 +97,13 @@ sub GetAuth {
 
         # We only need the dn for the actual group since all we care about is existence
         @attrs  = qw(dn);
-        $filter = Net::LDAP::Filter->new("(${group_attr}=" . escape_filter_value($group_val) . ")");
-        
-        $RT::Logger->debug( "LDAP Search === ",
-                            "Base:",
-                            $group,
-                            "== Filter:", 
-                            $filter->as_string,
-                            "== Attrs:", 
-                            join(',',@attrs));
-        
-        $ldap_msg = $ldap->search(  base   => $group,
-                                    filter => $filter,
-                                    attrs  => \@attrs,
-                                    scope  => 'base');
-
-        # And the user isn't a member:
-        unless ($ldap_msg->code == LDAP_SUCCESS || 
-                $ldap_msg->code == LDAP_PARTIAL_RESULTS) {
-            $RT::Logger->critical(  "Search for", 
-                                    $filter->as_string, 
-                                    "failed:",
-                                    ldap_error_name($ldap_msg->code), 
-                                    $ldap_msg->code);
-
-            # Fail auth - jump to next external auth service
-            return 0;
-        }
+        $ldap_msg = PerformSearch(
+            $ldap,
+            base   => $group,
+            filter => "(${group_attr}=" . escape_filter_value($group_val) . ")",
+            attrs  => \@attrs,
+            scope  => 'base'
+        ) or return 0;
 
         unless ($ldap_msg->count == 1) {
             $RT::Logger->debug(
@@ -213,31 +177,15 @@ sub CanonicalizeUserInfo {
     # errors should be logged by _GetBoundLdapObj so we don't have to.
     return ($found, %params) unless ($ldap);
 
-    # Do a search for them in LDAP
-    $RT::Logger->debug( "LDAP Search === ",
-                        "Base:",
-                        $base,
-                        "== Filter:", 
-                        $filter->as_string,
-                        "== Attrs:", 
-                        join(',',@attrs));
-
-    my $ldap_msg = $ldap->search(base   => $base,
-                                 filter => $filter,
-                                 attrs  => \@attrs);
-
-    # If we didn't get at LEAST a partial result, just die now.
-    if ($ldap_msg->code != LDAP_SUCCESS and 
-        $ldap_msg->code != LDAP_PARTIAL_RESULTS) {
-        $RT::Logger->critical(  (caller(0))[3],
-                                ": Search for ",
-                                $filter->as_string,
-                                " failed: ",
-                                ldap_error_name($ldap_msg->code), 
-                                $ldap_msg->code);
-        # $found remains as 0
-        
-        # Drop out to the next external information service
+    my $ldap_msg = PerformSearch(
+        $ldap,
+        base   => $base,
+        filter => $filter,
+        attrs  => \@attrs
+    );
+    
+    unless ( $ldap_msg ) {
+        # If we didn't get at LEAST a partial result, just die now.
         $ldap_msg = $ldap->unbind();
         if ($ldap_msg->code != LDAP_SUCCESS) {
             $RT::Logger->critical(  (caller(0))[3],
@@ -248,7 +196,6 @@ sub CanonicalizeUserInfo {
         undef $ldap;
         undef $ldap_msg;
         return ($found, %params);
-      
     } else {
         # If there's only one match, we're good; more than one and
         # we don't know which is the right one so we skip it.
@@ -299,7 +246,6 @@ sub UserExists {
    $RT::Logger->debug("UserExists params:\nusername: $username , service: $service"); 
     my $config              = $RT::ExternalSettings->{$service};
     
-    my $base                = $config->{'base'};
     my $filter              = $config->{'filter'};
 
     # While LDAP filters must be surrounded by parentheses, an empty set
@@ -323,20 +269,13 @@ sub UserExists {
     my $ldap = _GetBoundLdapObj($config);
     return unless $ldap;
 
-    my @attrs = values(%{$config->{'attr_map'}});
-
     # Check that the user exists in the LDAP service
-    $RT::Logger->debug( "LDAP Search === ",
-                        "Base:",
-                        $base,
-                        "== Filter:", 
-                        $filter->as_string,
-                        "== Attrs:", 
-                        join(',',@attrs));
-    
-    my $user_found = $ldap->search( base    => $base,
-                                    filter  => $filter,
-                                    attrs   => \@attrs);
+    my $user_found = PerformSearch(
+        $ldap,
+        base    => $config->{'base'},
+        filter  => $filter,
+        attrs   => ['uid'],
+    ) or return 0;
 
     if($user_found->count < 1) {
         # If 0 or negative integer, no user found or major failure
@@ -416,21 +355,13 @@ sub UserDisabled {
     my $ldap = _GetBoundLdapObj($config);
     next unless $ldap;
 
-    # We only need the UID for confirmation now, 
-    # the other information would waste time and bandwidth
-    my @attrs = ('uid'); 
-    
-    $RT::Logger->debug( "LDAP Search === ",
-                        "Base:",
-                        $base,
-                        "== Filter:", 
-                        $search_filter->as_string,
-                        "== Attrs:", 
-                        join(',',@attrs));
-          
-    my $disabled_users = $ldap->search(base   => $base, 
-                                       filter => $search_filter, 
-                                       attrs  => \@attrs);
+    my $disabled_users = PerformSearch(
+        $ldap,
+        base   => $base, 
+        filter => $search_filter, 
+        attrs  => ['uid'], # We only need the UID for confirmation now
+    ) or return 0;
+
     # If ANY results are returned, 
     # we are going to assume the user should be disabled
     if ($disabled_users->count) {
@@ -497,6 +428,38 @@ sub _GetBoundLdapObj {
     } else {
         return $ldap;
     }
+}
+
+sub PerformSearch {
+    my $ldap = shift;
+    my %args = @_;
+
+    $args{'filter'} = Net::LDAP::Filter->new($args{'filter'})
+        if $args{'filter'} && !ref $args{'filter'};
+
+    $RT::Logger->debug(
+        "LDAP Search === ",
+        $args{'base'}? ("Base:", $args{'base'}) : (),
+        $args{'filter'}? ("== Filter:", $args{'filter'}->as_string) : (),
+        $args{'attrs'}? ("== Attrs:", join ',', @{ $args{'attrs'} }) : (),
+    );
+    
+    my $res = $ldap->search( %args );
+    return undef unless $res;
+
+    # And the user isn't a member:
+    unless (
+        $res->code == LDAP_SUCCESS
+        || $res->code == LDAP_PARTIAL_RESULTS
+    ) {
+        $RT::Logger->error(
+            "Search for", $args{'filter'}->as_string, "failed:",
+            ldap_error_name($res->code), $res->code
+        );
+
+        return undef;
+    }
+    return $res;
 }
 
 # }}}
