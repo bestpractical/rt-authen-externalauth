@@ -52,7 +52,7 @@ sub import {
 sub bootstrap_ldap_server {
     my $self = shift;
 
-    my $port = 1024 + int rand(10000) + $$ % 1024;
+    my $port = RT::Test->generate_port;
 
     require Net::LDAP::Server::Test;
     my $server = Net::LDAP::Server::Test->new( $port, auto_schema => 1 );
@@ -93,7 +93,6 @@ sub bootstrap_ldap_basics {
         },
     );
     return ($server, $client);
-
 }
 
 1;
