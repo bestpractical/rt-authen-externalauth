@@ -49,6 +49,7 @@ sub import {
     require RT::Authen::ExternalAuth;
 }
 
+my %ldap;
 sub bootstrap_ldap_server {
     my $self = shift;
 
@@ -58,15 +59,16 @@ sub bootstrap_ldap_server {
     my $server = Net::LDAP::Server::Test->new( $port, auto_schema => 1 );
     return () unless $server;
 
-    return ($server, "localhost:$port", $port);
+    my $client = Net::LDAP->new( "localhost:$port" );
+    $client->bind;
+
+    @ldap{'server','client'} = ($server, $client);
+    return ($server, $client, "localhost:$port", $port);
 }
 
 sub bootstrap_ldap_basics {
     my $self = shift;
-    my ($server, $address, $port) = $self->bootstrap_ldap_server;
-
-    my $client = Net::LDAP->new( $address );
-    $client->bind;
+    my ($server, $client, $address, $port) = $self->bootstrap_ldap_server;
 
     RT->Config->Set( Plugins                     => 'RT::Authen::ExternalAuth' );
     RT->Config->Set( ExternalAuthPriority        => ['My_LDAP'] );
