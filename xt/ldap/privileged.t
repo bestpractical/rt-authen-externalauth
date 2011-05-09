@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 13;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 
@@ -9,15 +9,10 @@ my ($server, $client) = $class->bootstrap_ldap_basics;
 ok( $server, "spawned test LDAP server" );
 
 my $username = "testuser";
-my $dn       = "uid=$username,dc=bestpractical,dc=com";
-my $entry    = {
-    cn           => $username,
-    mail         => "$username\@invalid.tld",
-    uid          => $username,
-    objectClass  => 'User',
-    userPassword => 'password',
-};
-$client->add( $dn, attr => [%$entry] );
+$class->add_ldap_user(
+    uid  => $username,
+    mail => "$username\@invalid.tld",
+);
 
 RT->Config->Set( AutoCreate                  => { Privileged => 1 } );
 
