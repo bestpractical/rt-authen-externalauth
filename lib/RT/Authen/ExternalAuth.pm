@@ -611,23 +611,13 @@ sub CanonicalizeUserInfo {
             # Else, use it as a canonicalization key and lookup the user info    
             my $key = $config->{'attr_map'}->{$rt_attr};
             my $value = $args->{$rt_attr};
-            
-            # Check to see that the key being asked for is defined in the config's attr_map
-            my $valid = 0;
-            my ($attr_key, $attr_value);
-            my $attr_map = $config->{'attr_map'};
-            while (($attr_key, $attr_value) = each %$attr_map) {
-                $valid = 1 if ($key eq $attr_value);
-            }
-            unless ($valid){
-                $RT::Logger->debug( "This key (",
-                                    $key,
-                                    "is not a valid attribute key (",
-                                    $service,
-                                    ")");
+            unless ( $key ) {
+                $RT::Logger->warning(
+                    "No mapping for $rt_attr in attr_map for this service ($service)"
+                );
                 next;
             }
-            
+
             # Use an if/elsif structure to do a lookup with any custom code needed 
             # for any given type of external service, or die if no code exists for
             # the service requested.
