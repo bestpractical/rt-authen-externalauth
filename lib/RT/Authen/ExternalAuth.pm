@@ -580,7 +580,7 @@ sub CanonicalizeUserInfo {
                             sort(keys(%$args))));
 
     # Get the list of defined external services
-    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : undef;
+    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
     # For each external service...
     foreach my $service (@info_services) {
         
