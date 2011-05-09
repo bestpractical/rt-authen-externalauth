@@ -623,9 +623,9 @@ sub CanonicalizeUserInfo {
             # the service requested.
             
             if($config->{'type'} eq 'ldap'){    
-                ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo($service,$key,$value);
+                ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo($service,$key,$value, $args);
             } elsif ($config->{'type'} eq 'db') {
-                ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo($service,$key,$value);
+                ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo($service,$key,$value, $args);
             } else {
                 $RT::Logger->debug( (caller(0))[3],
                                     "does not consider",
