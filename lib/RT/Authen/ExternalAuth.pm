@@ -589,7 +589,7 @@ sub CanonicalizeUserInfo {
         
         # Get the config for the service so that we know what attrs we can canonicalize
         my $config = $RT::ExternalSettings->{$service};
-        
+
         if($config->{'type'} eq 'cookie'){
             $RT::Logger->debug("You cannot use SSO cookies as an information service!");
             next;
@@ -602,7 +602,7 @@ sub CanonicalizeUserInfo {
             unless(defined($args->{$rt_attr})) {
                 $RT::Logger->debug("This attribute (",
                                     $rt_attr,
-                                    ") is null or incorrectly defined in the attr_map for this service (",
+                                    ") is null or incorrectly defined in the attr_match_list for this service (",
                                     $service,
                                     ")");
                 next;
