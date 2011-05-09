@@ -97,4 +97,20 @@ sub bootstrap_ldap_basics {
     return ($server, $client);
 }
 
+sub add_ldap_user {
+    my $self = shift;
+    my %args = @_;
+
+    $args{'uid'} ||= $args{'cn'};
+    $args{'cn'} ||= $args{'uid'};
+
+    my $dn = delete $args{'dn'};
+    $dn ||= "uid=". $args{'uid'} .",dc=bestpractical,dc=com";
+
+    $args{'objectClass'} ||= 'User';
+    $args{'userPassword'} ||= 'password';
+
+    return $ldap{'client'}->add( $dn, attr => [%args] );
+}
+
 1;
