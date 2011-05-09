@@ -599,7 +599,8 @@ sub CanonicalizeUserInfo {
         foreach my $rt_attr (@{$config->{'attr_match_list'}}) {
             # Jump to the next attr in $args if this one isn't in the attr_match_list
             $RT::Logger->debug( "Attempting to use this canonicalization key:",$rt_attr);
-            unless(defined($args->{$rt_attr})) {
+            my $value = $args->{$rt_attr};
+            unless( defined $value && length $value ) {
                 $RT::Logger->debug("This attribute (",
                                     $rt_attr,
                                     ") is null or incorrectly defined in the attr_match_list for this service (",
@@ -610,7 +611,6 @@ sub CanonicalizeUserInfo {
                                
             # Else, use it as a canonicalization key and lookup the user info    
             my $key = $config->{'attr_map'}->{$rt_attr};
-            my $value = $args->{$rt_attr};
             unless ( $key ) {
                 $RT::Logger->warning(
                     "No mapping for $rt_attr in attr_map for this service ($service)"
