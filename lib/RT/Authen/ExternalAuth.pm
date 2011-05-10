@@ -566,12 +566,7 @@ sub CanonicalizeUserInfo {
     
     my $UserObj = shift;
     my $args    = shift;
-    
-    my $found   = 0;
-    my %params  = (Name         => undef,
-                  EmailAddress => undef,
-                  RealName     => undef);
-    
+
     my $current_value = sub {
         my $field = shift;
         return $args->{ $field } if keys %$args;
@@ -579,6 +574,8 @@ sub CanonicalizeUserInfo {
         return undef unless $UserObj->can( $field );
         return $UserObj->$field();
     };
+
+    my ($found, $config, %params) = (0);
 
     $RT::Logger->debug( (caller(0))[3], 
                         "called by", 
@@ -596,13 +593,19 @@ sub CanonicalizeUserInfo {
                             $service);
         
         # Get the config for the service so that we know what attrs we can canonicalize
-        my $config = $RT::ExternalSettings->{$service};
+        $config = $RT::ExternalSettings->{$service};
 
         if($config->{'type'} eq 'cookie'){
             $RT::Logger->debug("You cannot use SSO cookies as an information service!");
             next;
         }  
         
+        # Get the list of unique attrs we need
+        my @service_attrs = do {
+            my %seen;
+            grep !$seen{$_}++, map ref($_)? @$_ : ($_), values %{ $config->{'attr_map'} }
+        };
+
         # For each attr we've been told to canonicalize in the match list
         foreach my $rt_attr (@{$config->{'attr_match_list'}}) {
             # Jump to the next attr in $args if this one isn't in the attr_match_list
@@ -631,9 +634,9 @@ sub CanonicalizeUserInfo {
             # the service requested.
             
             if($config->{'type'} eq 'ldap'){    
-                ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo($service,$key,$value, $args);
+                ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo($service,$key,$value, \@service_attrs);
             } elsif ($config->{'type'} eq 'db') {
-                ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo($service,$key,$value, $args);
+                ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo($service,$key,$value, \@service_attrs);
             } else {
                 $RT::Logger->debug( (caller(0))[3],
                                     "does not consider",
@@ -647,29 +650,40 @@ sub CanonicalizeUserInfo {
         # Don't Check any more services
         last if $found;
     }
-    
-    # If found, Canonicalize Email Address and 
-    # update the args hash that we were given the hashref for
-    if ($found) {
-        # It's important that we always have a canonical email address
-        if ($params{'EmailAddress'}) {
-            $params{'EmailAddress'} = $UserObj->CanonicalizeEmailAddress($params{'EmailAddress'});
-        } 
-        %$args = (%$args, %params);
+
+    unless ( $found ) {
+        ### HACK: The config var below is to overcome the (IMO) bug in
+        ### RT::User::Create() which expects this function to always
+        ### return true or rejects the user for creation. This should be
+        ### a different config var (CreateUncanonicalizedUsers) and 
+        ### should be honored in RT::User::Create()
+        return($RT::AutoCreateNonExternalUsers);
     }
+
+    # If found let's build back RT's fields
+    my %res;
+    while ( my ($k, $v) = each %{ $config->{'attr_map'} } ) {
+        if ( keys %$args ) {
+            $res{ $k } = $params{ $v };
+        } else {
+            $res{ $k } = $params{ $v };
+        }
+    }
+
+    # It's important that we always have a canonical email address
+    if ($res{'EmailAddress'}) {
+        $res{'EmailAddress'} = $UserObj->CanonicalizeEmailAddress($res{'EmailAddress'});
+    } 
+
+    # update the args hash that we were given the hashref for
+    %$args = (%$args, %res);
 
     $RT::Logger->info(  (caller(0))[3], 
                         "returning", 
                         join(", ", map {sprintf("%s: %s", $_, ($args->{$_} ? $args->{$_} : ''))}
                             sort(keys(%$args))));
 
-    ### HACK: The config var below is to overcome the (IMO) bug in
-    ### RT::User::Create() which expects this function to always
-    ### return true or rejects the user for creation. This should be
-    ### a different config var (CreateUncanonicalizedUsers) and 
-    ### should be honored in RT::User::Create()
-    return($found || $RT::AutoCreateNonExternalUsers);
-   
+    return $found;
 }
 
 {

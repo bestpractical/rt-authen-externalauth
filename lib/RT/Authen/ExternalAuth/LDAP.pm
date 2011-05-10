@@ -130,7 +130,7 @@ sub GetAuth {
 
 sub CanonicalizeUserInfo {
     
-    my ($service, $key, $value) = @_;
+    my ($service, $key, $value, $attrs) = @_;
 
     # Load the config
     my $config = $RT::ExternalSettings->{$service};
@@ -138,9 +138,6 @@ sub CanonicalizeUserInfo {
     # Figure out what's what
     my $base            = $config->{'base'};
     my $filter          = $config->{'filter'};
-
-    # Get the list of unique attrs we need
-    my @attrs = values(%{$config->{'attr_map'}});
 
     # This is a bit confusing and probably broken. Something to revisit..
     my $filter_addition = ($key && $value) ? "(". $key . "=". escape_filter_value($value) .")" : "";
@@ -172,7 +169,7 @@ sub CanonicalizeUserInfo {
         $ldap,
         base   => $base,
         filter => $filter,
-        attrs  => \@attrs
+        attrs  => $attrs
     );
     
     # If there's only one match, we're good; more than one and
@@ -183,19 +180,17 @@ sub CanonicalizeUserInfo {
     }
 
     my %res;
-    my $entry = $ldap_msg->first_entry();
-    foreach my $key (keys(%{$config->{'attr_map'}})) {
-                # XXX TODO: This legacy code wants to be removed since modern
-                # configs will always fall through to the else and the logic is
-                # weird even if you do have the old config.
-                if ($RT::LdapAttrMap and $RT::LdapAttrMap->{$key} eq 'dn') {
-            $res{$key} = $entry->dn();
+    my $entry = $ldap_msg->first_entry;
+    foreach my $attr ( @$attrs ) {
+        # XXX TODO: This if branch was inactive for a while
+        # now it works, but is it right thing to do? entry->dn
+        # is it at all diiferent from get_value('dn')?
+        if ( $attr eq 'dn' ) {
+            $res{ $attr } = $entry->dn;
         } else {
-            $res{$key} = 
-              ($entry->get_value($config->{'attr_map'}->{$key}))[0];
+            $res{ $attr } = ($entry->get_value( $attr ))[0];
         }
     }
-
     Unbind( $ldap );
     return (1, %res);
 }
