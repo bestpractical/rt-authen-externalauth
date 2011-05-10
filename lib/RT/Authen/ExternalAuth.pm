@@ -408,8 +408,8 @@ sub UpdateUserInfo {
     # Update their info from external service using the username as the lookup key
     # CanonicalizeUserInfo will work out for itself which service to use
     # Passing it a service instead could break other RT code
-    my %args = (Name => $username);
-    $UserObj->CanonicalizeUserInfo(\%args);
+    my %args;
+    $UserObj->CanonicalizeUserInfo( \%args );
 
     # For each piece of information returned by CanonicalizeUserInfo,
     # run the Set method for that piece of info to change it for the user
@@ -572,6 +572,14 @@ sub CanonicalizeUserInfo {
                   EmailAddress => undef,
                   RealName     => undef);
     
+    my $current_value = sub {
+        my $field = shift;
+        return $args->{ $field } if keys %$args;
+
+        return undef unless $UserObj->can( $field );
+        return $UserObj->$field();
+    };
+
     $RT::Logger->debug( (caller(0))[3], 
                         "called by", 
                         caller, 
@@ -599,7 +607,7 @@ sub CanonicalizeUserInfo {
         foreach my $rt_attr (@{$config->{'attr_match_list'}}) {
             # Jump to the next attr in $args if this one isn't in the attr_match_list
             $RT::Logger->debug( "Attempting to use this canonicalization key:",$rt_attr);
-            my $value = $args->{$rt_attr};
+            my $value = $current_value->( $rt_attr );
             unless( defined $value && length $value ) {
                 $RT::Logger->debug("This attribute (",
                                     $rt_attr,
