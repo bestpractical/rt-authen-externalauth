@@ -703,4 +703,91 @@ sub CanonicalizeUserInfo {
     };
 }
 
+{
+    no warnings 'redefine';
+    my $orig = RT::User->can('LoadByCols');
+    *RT::User::LoadByCols = sub {
+        my $self = shift;
+        my %args = @_;
+
+        my $rv = $orig->( $self, %args );
+        return $rv if $self->id;
+
+# we couldn't load a user. ok, but user may exist anyway. It may happen when
+# RT fields in attr_match_list are mapped to multiple attributes in an external
+# source, for example: attr_map => { EmailAddress => [qw(mail alias1 alias2 alias3)], }
+
+        # find services that may have alternative values for a field we search by
+        my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
+        foreach my $service ( splice @info_services ) {
+            my $config = $RT::ExternalSettings->{ $service };
+            next if $config->{'type'} eq 'cookie';
+            next unless
+                grep ref $_,
+                map $config->{'attr_map'}{ $_ },
+                @{ $config->{'attr_match_list'} };
+
+            push @info_services, $service;
+        }
+        return $rv unless @info_services;
+
+        # find user in external service and fetch alternative values
+        # for a field
+        my ($found, $search_by, @alternatives);
+        foreach my $service (@info_services) {
+            my $config = $RT::ExternalSettings->{$service};
+
+            # Get the list of unique attrs we need
+            my @service_attrs = do {
+                my %seen;
+                grep !$seen{$_}++, map ref($_)? @$_ : ($_), values %{ $config->{'attr_map'} }
+            };
+
+            foreach my $rt_attr ( @{ $config->{'attr_match_list'} } ) {
+                next unless exists $args{ $rt_attr }
+                    && defined $args{ $rt_attr }
+                    && length $args{ $rt_attr };
+                next unless ref $config->{'attr_map'}{ $rt_attr };
+
+                $search_by = $rt_attr;
+                last;
+            }
+            next unless $search_by;
+
+            my @search_args = (
+                $service,
+                $config->{'attr_map'}{ $search_by },
+                $args{ $search_by },
+                $config->{'attr_map'}{ $search_by },
+            );
+
+            my %params;
+            if($config->{'type'} eq 'ldap') {
+                ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo( @search_args );
+            } elsif ($config->{'type'} eq 'db') {
+                ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo( @search_args );
+            } else {
+                $RT::Logger->debug( (caller(0))[3],
+                                    "does not consider",
+                                    $service,
+                                    "a valid information service");
+            }
+            next unless $found;
+
+            @alternatives = grep defined && length && $_ ne $args{ $search_by }, values %params;
+
+            # Don't Check any more services
+            last;
+        }
+        return $rv unless $found;
+
+        # lookup by alternatives
+        foreach my $value ( @alternatives ) {
+            my $rv = $orig->( $self, %args, $search_by => $value );
+            return $rv if $self->id;
+        }
+        return $rv;
+    };
+}
+
 1;
