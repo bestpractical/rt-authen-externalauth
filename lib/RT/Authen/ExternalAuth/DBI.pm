@@ -120,12 +120,10 @@ sub GetAuth {
 
 sub CanonicalizeUserInfo {
     
-    my ($service, $key, $value) = @_;
+    my ($service, $key, $value, $attrs) = @_;
 
     my $found = 0;
-    my %params = (Name         => undef,
-                  EmailAddress => undef,
-                  RealName     => undef);
+    my %params = ();
     
     # Load the config
     my $config = $RT::ExternalSettings->{$service};
@@ -147,27 +145,21 @@ sub CanonicalizeUserInfo {
         return ($found, %params);
     }
     
-    # "where" refers to WHERE section of SQL query
-    my ($where_key,$where_value) = ("@{[ $key ]}",$value);
-
     # Get the list of unique attrs we need
-    my %db_attrs = map {$_ => 1} values(%{$config->{'attr_map'}});
-    my @attrs = keys(%db_attrs);
-    my $fields = join(',',@attrs);
-    my $query = "SELECT $fields FROM $table WHERE $where_key=?";
-    my @bind_params = ($where_value);
+    my $query = "SELECT ". join(', ', @$attrs) ." FROM $table WHERE $key=?";
+    my @bind_params = ($value);
 
     # Uncomment this to trace basic DBI throughput in a log
     # DBI->trace(1,'/tmp/dbi.log');
     my $dbh = _GetBoundDBIObj($config);
-    my $results_hashref = $dbh->selectall_hashref($query,$key,{},@bind_params);
+    my $results = $dbh->selectall_arrayref($query, undef, @bind_params);
     $dbh->disconnect();
 
-    if ((scalar keys %$results_hashref) != 1) {
+    if ( @$results != 1 ) {
         # If returned users <> 1, we have no single unique user, so prepare to die
         my $death_msg;
         
-	    if ((scalar keys %$results_hashref) == 0) {
+	    if ( @$results == 0) {
             # If no user...
 	        $death_msg = "No User Found in External Database!";
         } else {
@@ -190,14 +182,8 @@ sub CanonicalizeUserInfo {
 
     # We haven't dropped out, so DB search must have succeeded with 
     # exactly 1 result. Get the result and set $found to 1
-    my $result = $results_hashref->{$value};
- 
-    # Use the result to populate %params for every key we're given in the config
-    foreach my $key (keys(%{$config->{'attr_map'}})) {
-        $params{$key} = ($result->{$config->{'attr_map'}->{$key}})[0];
-    }
-    
     $found = 1;
+    @params{ @$attrs } = @{ $results->[0] };
   
     return ($found, %params);
 }
