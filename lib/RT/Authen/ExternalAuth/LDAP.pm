@@ -134,23 +134,14 @@ sub CanonicalizeUserInfo {
 
     # Load the config
     my $config = $RT::ExternalSettings->{$service};
-   
-    # Figure out what's what
-    my $base            = $config->{'base'};
-    my $filter          = $config->{'filter'};
 
-    # This is a bit confusing and probably broken. Something to revisit..
-    my $filter_addition = ($key && $value) ? "(". $key . "=". escape_filter_value($value) .")" : "";
-    if(defined($filter) && ($filter ne "()")) {
-        $filter = Net::LDAP::Filter->new(   "(&" . 
-                                            $filter . 
-                                            $filter_addition . 
-                                            ")"
-                                        ); 
-    } else {
-        $RT::Logger->debug( "LDAP Filter invalid or not present.");
-    }
+    my $filter = JoinFilters(
+        '&',
+        JoinFilters('|', map "($_=". escape_filter_value( $value ) .")", ref $key? @$key: ($key) ),
+        $config->{'filter'},
+    ) or return (0);
 
+    my $base = $config->{'base'};
     unless (defined($base)) {
         $RT::Logger->critical(  (caller(0))[3],
                                 "LDAP baseDN not defined");
