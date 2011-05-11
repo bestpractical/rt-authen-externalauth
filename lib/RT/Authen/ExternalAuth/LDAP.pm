@@ -429,6 +429,25 @@ sub PerformSearch {
     return $res;
 }
 
+sub JoinFilters {
+    my $op = shift;
+    my @list =
+        grep defined && length && $_ ne '()',
+        map ref $_? $_->as_string : $_,
+        @_;
+    return undef unless @list;
+
+    my $str = @list > 1
+        ? "($op". join( '', @list ) .')'
+        : $list[0]
+    ;
+    my $obj = Net::LDAP::Filter->new( $str );
+    $RT::Logger->error("'$str' is not valid LDAP filter")
+        unless $obj;
+
+    return $obj;
+}
+
 # }}}
 
 1;
