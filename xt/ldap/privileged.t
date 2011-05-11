@@ -1,51 +1,65 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1, tests => 15;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 20;
 my $class = 'RT::Authen::ExternalAuth::Test';
-
 
 my ($server, $client) = $class->bootstrap_ldap_basics;
 ok( $server, "spawned test LDAP server" );
 
-my $username = "testuser";
-$class->add_ldap_user(
-    uid  => $username,
-    mail => "$username\@invalid.tld",
-);
-
 RT->Config->Set( AutoCreate                  => { Privileged => 1 } );
+
+RT::Test->set_rights(
+    { Principal => 'Everyone', Right => [qw(SeeQueue ShowTicket CreateTicket)] },
+);
 
 my ( $baseurl, $m ) = RT::Test->started_ok();
 
-diag "test uri login";
+
+diag "login, make sure user privileged";
 {
-    ok( !$m->login( 'fakeuser', 'password' ), 'not logged in with fake user' );
-    ok( $m->login( 'testuser', 'password' ), 'logged in' );
+    my $username = $class->add_ldap_user_simple;
+    ok( $m->login( $username, 'password' ), 'logged in' );
+
+    {
+        my $user = RT::User->new($RT::SystemUser);
+        my ($ok,$msg) = $user->Load( $username );
+        ok($user->id);
+        is($user->EmailAddress, "$username\@invalid.tld");
+        ok($user->Privileged, 'privileged user');
+    }
+
+    unlike( $m->uri, qr!SelfService!, 'privileged home page' );
 }
 
-diag "test user creation";
+diag "send mail, make sure user privileged";
 {
-    my $testuser = RT::User->new($RT::SystemUser);
-    my ($ok,$msg) = $testuser->Load( 'testuser' );
-    ok($ok,$msg);
-    is($testuser->EmailAddress,'testuser@invalid.tld');
+    my $username = $class->add_ldap_user_simple;
+    {
+        my $mail = << "MAIL";
+Subject: Test
+From: $username\@invalid.tld
+
+test
+MAIL
+
+        my ($status, $id) = RT::Test->send_via_mailgate($mail);
+        is ($status >> 8, 0, "The mail gateway exited normally");
+        ok ($id, "got id of a newly created ticket - $id");
+
+        my $ticket = RT::Ticket->new( $RT::SystemUser );
+        $ticket->Load( $id );
+        ok ($ticket->id, 'loaded ticket');
+
+        my $user = $ticket->CreatorObj;
+        is($user->EmailAddress, "$username\@invalid.tld");
+        ok($user->Privileged, 'privileged user');
+    }
+    {
+        ok( $m->login( $username, 'password' ), 'logged in' );
+        unlike( $m->uri, qr!SelfService!, 'privileged home page' );
+    }
 }
-
-
-diag "test form login";
-{
-    $m->logout;
-    $m->get_ok( $baseurl, 'base url' );
-    $m->submit_form(
-        form_number => 1,
-        fields      => { user => 'testuser', pass => 'password', },
-    );
-    $m->text_contains( 'Logout', 'logged in via form' );
-}
-
-like( $m->uri, qr!$baseurl/(index\.html)?!, 'privileged home page' );
 
 $client->unbind();
-
 $m->get_warnings;
