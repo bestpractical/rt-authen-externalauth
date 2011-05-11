@@ -1,15 +1,8 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test;
-use DBI;
-use File::Temp;
-use Digest::MD5;
-use File::Spec;
-
-eval { require DBD::SQLite; } or do {
-    plan skip_all => 'Unable to test without DBD::SQLite';
-};
+use RT::Authen::ExternalAuth::Test dbi => 'SQLite', tests => 19;
+my $class = 'RT::Authen::ExternalAuth::Test';
 
 my $dir    = File::Temp::tempdir( CLEANUP => 1 );
 my $dbname = File::Spec->catfile( $dir, 'rtauthtest' );

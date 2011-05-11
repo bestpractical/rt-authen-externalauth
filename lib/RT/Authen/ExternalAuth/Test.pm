@@ -42,6 +42,20 @@ sub import {
             exit;
         }
     }
+    if ( my $driver = delete $args{'dbi'} ) {
+        local $@;
+        eval {
+            require DBI;
+            require File::Temp;
+            require Digest::MD5;
+            require File::Spec;
+            eval "require DBD::$driver; 1";
+        } or do {
+            require Test::More;
+            Test::More::plan( skip_all => 'Unable to test without DB modules: '. $@ );
+            exit;
+        }
+    }
 
     $class->SUPER::import( %args );
     $class->export_to_level(1);
