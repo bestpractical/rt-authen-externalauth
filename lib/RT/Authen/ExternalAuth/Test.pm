@@ -117,4 +117,21 @@ sub add_ldap_user {
     return $ldap{'client'}->add( $dn, attr => [%args] );
 }
 
+{ my $i = 0;
+sub add_ldap_user_simple {
+    my $self = shift;
+    my %args = @_;
+
+    my $name = "testuser". ++$i;
+
+    s/\%name\b/$name/g foreach grep defined, values %args;
+
+    $self->add_ldap_user(
+        cn    => $name,
+        mail  => "$name\@invalid.tld",
+        %args,
+    );
+    return $name;
+} }
+
 1;
