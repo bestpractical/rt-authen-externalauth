@@ -663,10 +663,18 @@ sub CanonicalizeUserInfo {
     # If found let's build back RT's fields
     my %res;
     while ( my ($k, $v) = each %{ $config->{'attr_map'} } ) {
-        if ( keys %$args ) {
+        unless ( ref $v ) {
             $res{ $k } = $params{ $v };
+            next;
+        }
+
+        my $current = $current_value->( $k );
+        unless ( defined $current ) {
+            $res{ $k } = (grep defined && length, map $params{ $_ }, @$v)[0];
         } else {
-            $res{ $k } = $params{ $v };
+            unless ( grep defined && length && $_ eq $current, map $params{ $_ }, @$v ) {
+                $res{ $k } = (grep defined && length, map $params{ $_ }, @$v)[0];
+            }
         }
     }
 
