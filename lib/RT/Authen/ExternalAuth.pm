@@ -737,12 +737,6 @@ sub CanonicalizeUserInfo {
         foreach my $service (@info_services) {
             my $config = $RT::ExternalSettings->{$service};
 
-            # Get the list of unique attrs we need
-            my @service_attrs = do {
-                my %seen;
-                grep !$seen{$_}++, map ref($_)? @$_ : ($_), values %{ $config->{'attr_map'} }
-            };
-
             foreach my $rt_attr ( @{ $config->{'attr_match_list'} } ) {
                 next unless exists $args{ $rt_attr }
                     && defined $args{ $rt_attr }
