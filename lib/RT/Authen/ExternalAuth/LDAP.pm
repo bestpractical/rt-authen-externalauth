@@ -405,7 +405,6 @@ sub PerformSearch {
     my $res = $ldap->search( %args );
     return undef unless $res;
 
-    # And the user isn't a member:
     unless (
         $res->code == LDAP_SUCCESS
         || $res->code == LDAP_PARTIAL_RESULTS
