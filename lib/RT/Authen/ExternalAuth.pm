@@ -128,7 +128,6 @@ This software is released under version 2 of the GNU
 General Public License. The license is distributed with
 this package in the LICENSE file found in the directory 
 root.
-
 =cut    
 
 use RT::Authen::ExternalAuth::LDAP;
