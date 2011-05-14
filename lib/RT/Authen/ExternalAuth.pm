@@ -715,50 +715,132 @@ sub CanonicalizeUserInfo {
         my $rv = $orig->( $self, %args );
         return $rv if $self->id;
 
-# we couldn't load a user. ok, but user may exist anyway. It may happen when
-# RT fields in attr_match_list are mapped to multiple attributes in an external
-# source, for example: attr_map => { EmailAddress => [qw(mail alias1 alias2 alias3)], }
+# we couldn't load a user. ok, but user may exist anyway. It may happen in the following
+# cases:
+# 1) Service has multiple fields in attr_match_list, it's important when we have Name
+# and EmailAddress in there. 
 
-        # find services that may have alternative values for a field we search by
-        my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
-        foreach my $service ( splice @info_services ) {
-            my $config = $RT::ExternalSettings->{ $service };
-            next if $config->{'type'} eq 'cookie';
-            next unless
-                grep ref $_,
-                map $config->{'attr_map'}{ $_ },
-                @{ $config->{'attr_match_list'} };
-
-            push @info_services, $service;
-        }
-        return $rv unless @info_services;
-
-        # find user in external service and fetch alternative values
-        # for a field
-        my ($found, $search_by, @alternatives);
-        foreach my $service (@info_services) {
-            my $config = $RT::ExternalSettings->{$service};
-
-            $search_by = undef;
-            foreach my $rt_attr ( @{ $config->{'attr_match_list'} } ) {
-                next unless exists $args{ $rt_attr }
-                    && defined $args{ $rt_attr }
-                    && length $args{ $rt_attr };
-                next unless ref $config->{'attr_map'}{ $rt_attr };
-
-                $search_by = $rt_attr;
-                last;
+        my (%other) = FindRecordsByOtherFields( $self, %args );
+        while ( my ($search_by, $values) = each %other ) {
+            foreach my $value ( @$values ) {
+                my $rv = $orig->( $self, $search_by => $value );
+                return $rv if $self->id;
             }
-            next unless $search_by;
+        }
 
+# 2) RT fields in attr_match_list are mapped to multiple attributes in an external
+# source, for example: attr_map => { EmailAddress => [qw(mail alias1 alias2 alias3)], }
+        my ($search_by, @alternatives) = FindRecordsWithAlternatives( $self, %args );
+        foreach my $value ( @alternatives ) {
+            my $rv = $orig->( $self, %args, $search_by => $value );
+            return $rv if $self->id;
+        }
+
+        return $rv;
+    };
+}
+
+sub FindRecordsWithAlternatives {
+    my $user = shift;
+    my %args = @_;
+
+    # find services that may have alternative values for a field we search by
+    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
+    foreach my $service ( splice @info_services ) {
+        my $config = $RT::ExternalSettings->{ $service };
+        next if $config->{'type'} eq 'cookie';
+        next unless
+            grep ref $_,
+            map $config->{'attr_map'}{ $_ },
+            @{ $config->{'attr_match_list'} };
+
+        push @info_services, $service;
+    }
+    return unless @info_services;
+
+    # find user in external service and fetch alternative values
+    # for a field
+    foreach my $service (@info_services) {
+        my $config = $RT::ExternalSettings->{$service};
+
+        my $search_by = undef;
+        foreach my $rt_attr ( @{ $config->{'attr_match_list'} } ) {
+            next unless exists $args{ $rt_attr }
+                && defined $args{ $rt_attr }
+                && length $args{ $rt_attr };
+            next unless ref $config->{'attr_map'}{ $rt_attr };
+
+            $search_by = $rt_attr;
+            last;
+        }
+        next unless $search_by;
+
+        my @search_args = (
+            $service,
+            $config->{'attr_map'}{ $search_by },
+            $args{ $search_by },
+            $config->{'attr_map'}{ $search_by },
+        );
+
+        my ($found, %params);
+        if($config->{'type'} eq 'ldap') {
+            ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo( @search_args );
+        } elsif ($config->{'type'} eq 'db') {
+            ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo( @search_args );
+        } else {
+            $RT::Logger->debug( (caller(0))[3],
+                                "does not consider",
+                                $service,
+                                "a valid information service");
+        }
+        next unless $found;
+
+        my @alternatives = grep defined && length && $_ ne $args{ $search_by }, values %params;
+
+        # Don't Check any more services
+        return @alternatives;
+    }
+    return;
+}
+
+sub FindRecordsByOtherFields {
+    my $user = shift;
+    my %args = @_;
+
+    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
+    foreach my $service ( splice @info_services ) {
+        my $config = $RT::ExternalSettings->{ $service };
+        next if $config->{'type'} eq 'cookie';
+        next unless @{ $config->{'attr_match_list'} } > 1;
+
+        push @info_services, $service;
+    }
+    return unless @info_services;
+
+    # find user in external service and fetch alternative values
+    # for a field
+    foreach my $service (@info_services) {
+        my $config = $RT::ExternalSettings->{$service};
+
+        foreach my $search_by ( @{ $config->{'attr_match_list'} } ) {
+            next unless exists $args{ $search_by }
+                && defined $args{ $search_by }
+                && length $args{ $search_by };
+
+            my @fetch =
+                map ref $_? @$_ : $_,
+                grep defined,
+                map $config->{'attr_map'}{ $_ },
+                grep $_ ne $search_by,
+                @{ $config->{'attr_match_list'} };
             my @search_args = (
                 $service,
                 $config->{'attr_map'}{ $search_by },
                 $args{ $search_by },
-                $config->{'attr_map'}{ $search_by },
+                \@fetch,
             );
 
-            my %params;
+            my ($found, %params);
             if($config->{'type'} eq 'ldap') {
                 ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo( @search_args );
             } elsif ($config->{'type'} eq 'db') {
@@ -771,20 +853,19 @@ sub CanonicalizeUserInfo {
             }
             next unless $found;
 
-            @alternatives = grep defined && length && $_ ne $args{ $search_by }, values %params;
-
-            # Don't Check any more services
-            last;
+            my %res =
+                map { $_ => $config->{'attr_map'}{ $_ } }
+                grep defined $config->{'attr_map'}{ $_ },
+                grep $_ ne $search_by,
+                @{ $config->{'attr_match_list'} }
+            ;
+            foreach my $value ( values %res ) {
+                $value = ref $value? [ map $params{$_}, @$value ] : [ $params{ $value } ];
+            }
+            return %res;
         }
-        return $rv unless $found;
-
-        # lookup by alternatives
-        foreach my $value ( @alternatives ) {
-            my $rv = $orig->( $self, %args, $search_by => $value );
-            return $rv if $self->id;
-        }
-        return $rv;
-    };
+    }
+    return;
 }
 
 sub WorkaroundAutoCreate {
