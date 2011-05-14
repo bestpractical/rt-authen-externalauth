@@ -113,6 +113,57 @@ Then use the examples provided to prepare your own custom
 configuration which should be added to your site configuration in
 $RTHOME/etc/RT_SiteConfig.pm
 
+=head1 CONFIGURATION
+
+=head2 Generic
+
+=head3 attr_match_list
+
+The list of RT attributes that uniquely identify a user. It's
+recommended to use 'Name' and 'EmailAddress' to save
+encountering problems later. Example:
+
+    'attr_match_list' => [
+        'Name',
+        'EmailAddress', 
+        'RealName',
+        'WorkPhone', 
+    ],
+
+=head3 attr_map
+
+Mapping of RT attributes on to attributes in the external source.
+Example:
+
+    'attr_map' => {
+        'Name'         => 'sAMAccountName',
+        'EmailAddress' => 'mail',
+        'Organization' => 'physicalDeliveryOfficeName',
+        'RealName'     => 'cn',
+        ...
+    },
+
+Since version 0.10 it's possible to map one RT field to multiple
+external attributes, for example:
+
+    attr_map => {
+        EmailAddress => ['mail', 'alias'],
+        ...
+    },
+
+Note that only one value storred in RT. However, search goes by
+all external attributes if such RT field list in L</attr_match_list>.
+On create or update entered value is used as long as it's valid.
+If user didn't enter value then value stored in the first external
+attribute is used. Config example:
+
+    attr_match_list => ['Name', 'EmailAddress'],
+    attr_map => {
+        Name         => 'account',
+        EmailAddress => ['mail', 'alias'],
+        ...
+    },
+
 =head1 AUTHOR
         Mike Peachey
         Jennic Ltd.
@@ -866,6 +917,14 @@ sub FindRecordsByOtherFields {
     }
     return;
 }
+
+=head2 WorkaroundAutoCreate
+
+RT has C<$AutoCreate> option in the config. However, up to RT 4.0.0 this
+option is no used when account created by incomming email. This module
+workarounds this problem.
+
+=cut
 
 sub WorkaroundAutoCreate {
     my $user = shift;
