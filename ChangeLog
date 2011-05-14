@@ -1,3 +1,11 @@
+
+    * avoid some user create/update conflicts when module enabled
+      on old system
+    * enable $AutoCreate config option for accounts created through
+      email submission
+    * support mapping user's field in RT to multiple attributes
+      in external source (LDAP/DBI)
+
 0.10_01 2012-02-23  Thomas Sibley
 	* Escape usernames in filter values so special characters don't die
 
