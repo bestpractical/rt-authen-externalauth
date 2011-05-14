@@ -136,7 +136,7 @@ sub add_ldap_user_simple {
     my $self = shift;
     my %args = @_;
 
-    my $name = "testuser". ++$i;
+    my $name = delete $args{'cn'} || "testuser". ++$i;
 
     s/\%name\b/$name/g foreach grep defined, values %args;
 
