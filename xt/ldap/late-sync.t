@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1, tests => 43;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 19;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 my ($server, $client) = $class->bootstrap_ldap_basics;
@@ -43,12 +43,16 @@ MAIL
         my $user = $first_user = $ticket->CreatorObj;
         is( $user->Name, "$username\@invalid.tld" );
         is( $user->EmailAddress, "$username\@invalid.tld" );
+
+        # make user privileged to stop $m->login failing
+        $user->SetPrivileged(1) unless $user->Privileged;
     }
+    DBIx::SearchBuilder::Record::Cachable->FlushCache;
 
     $class->add_ldap_user_simple( cn => $username );
 
     {
-        ok( $m->login( $username, 'password' ), 'logged in' );
+        ok( custom_login( $username, 'password' ), 'logged in' );
 
         ok( $m->goto_create_ticket( $queue ), "go to create ticket" );
         $m->form_name('TicketCreate');
@@ -66,6 +70,19 @@ MAIL
         is( $user->Name, $username );
         is( $user->EmailAddress, "$username\@invalid.tld" );
     }
+}
+
+sub custom_login {
+    my $user = shift || 'root';
+    my $pass = shift || 'password';
+   
+    $m->logout;
+
+    my $url = $m->rt_base_url;
+    $m->get($url . "?user=$user;pass=$pass");
+    return $m->status == 200
+        && $m->content =~ qr/Logout/i
+        && $m->content =~ m{<span>\Q$user\E\@invalid\.tld</span>}i;
 }
 
 $client->unbind();
