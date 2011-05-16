@@ -3,7 +3,9 @@
       on old system
     * enable $AutoCreate config option for accounts created through
       email submission
-    * support mapping user's field in RT to multiple attributes
+    * external info update was only possible by Name, now it
+      works for any field from attr_match_list
+    * support mapping fields in RT to multiple attributes
       in external source (LDAP/DBI)
 
 0.10_01 2012-02-23  Thomas Sibley
