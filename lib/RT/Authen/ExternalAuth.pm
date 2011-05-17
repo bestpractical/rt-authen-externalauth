@@ -800,8 +800,7 @@ sub FindRecordsWithAlternatives {
         my $config = $RT::ExternalSettings->{ $service };
         next if $config->{'type'} eq 'cookie';
         next unless
-            grep ref $_,
-            map $config->{'attr_map'}{ $_ },
+            grep ref $config->{'attr_map'}{ $_ },
             @{ $config->{'attr_match_list'} };
 
         push @info_services, $service;
@@ -877,12 +876,13 @@ sub FindRecordsByOtherFields {
                 && defined $args{ $search_by }
                 && length $args{ $search_by };
 
-            my @fetch =
-                map ref $_? @$_ : $_,
-                grep defined,
-                map $config->{'attr_map'}{ $_ },
-                grep $_ ne $search_by,
-                @{ $config->{'attr_match_list'} };
+            my @fetch;
+            foreach my $field ( @{ $config->{'attr_match_list'} } ) {
+                next if $field eq $search_by;
+
+                my $external = $config->{'attr_map'}{ $field };
+                push @fetch, ref $external? (@$external) : ($external);
+            }
             my @search_args = (
                 $service,
                 $config->{'attr_map'}{ $search_by },
