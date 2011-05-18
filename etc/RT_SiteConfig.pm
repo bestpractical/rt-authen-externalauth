@@ -1,42 +1,68 @@
-# The order in which the services defined in ExternalSettings
-# should be used to authenticate users. User is authenticated
-# if successfully confirmed by any service - no more services
-# are checked.
+
+=over 4
+
+=item C<$ExternalAuthPriority>
+
+The order in which the services defined in ExternalSettings
+should be used to authenticate users. User is authenticated
+if successfully confirmed by any service - no more services
+are checked.
+
+=cut
+
 Set($ExternalAuthPriority,  [   'My_LDAP',
                                 'My_MySQL',
                                 'My_SSO_Cookie'
                             ]
 );
 
-# The order in which the services defined in ExternalSettings
-# should be used to get information about users. This includes
-# RealName, Tel numbers etc, but also whether or not the user
-# should be considered disabled.
-#
-# Once user info is found, no more services are checked.
-#
-# You CANNOT use a SSO cookie for authentication.
+=item C<$ExternalInfoPriority>
+
+The order in which the services defined in ExternalSettings
+should be used to get information about users. This includes
+RealName, Tel numbers etc, but also whether or not the user
+should be considered disabled.
+
+Once user record is found, no more services are checked.
+
+You CANNOT use a SSO cookie to retrieve information.
+
+=cut
+
 Set($ExternalInfoPriority,  [   'My_MySQL',
                                 'My_LDAP'
                             ]
 );
 
-# If this is set to true, then the relevant packages will
-# be loaded to use SSL/TLS connections. At the moment,
-# this just means "use Net::SSLeay;"
+=item C<$ExternalServiceUsesSSLorTLS>
+
+If this is set to true, then the relevant packages will
+be loaded to use SSL/TLS connections. At the moment,
+this just means L<Net::SSLeay>.
+
+=cut
+
 Set($ExternalServiceUsesSSLorTLS,    0);
 
-# If this is set to 1, then users should be autocreated by RT
-# as internal users if they fail to authenticate from an
-# external service.
+=item C<$AutoCreateNonExternalUsers>
+
+If this is set to 1, then users should be autocreated by RT
+as internal users if they fail to authenticate from an
+external service.
+
+=cut
+
 Set($AutoCreateNonExternalUsers,    0);
 
-# These are the full settings for each external service as a HashOfHashes
-# Note that you may have as many external services as you wish. They will
-# be checked in the order specified in the Priority directives above.
-# e.g.
-#   Set($ExternalAuthPriority,['My_LDAP','My_MySQL','My_Oracle','SecondaryLDAP','Other-DB']);
-#
+=item C<$ExternalSettings>
+
+These are the full settings for each external service as a HashOfHashes.
+Note that you may have as many external services as you wish. They will
+be checked in the order specified in $ExternalAuthPriority and
+$ExternalInfoPriority directives above.
+
+=cut
+
 Set($ExternalSettings, {   # AN EXAMPLE DB SERVICE
     'My_MySQL'   =>  {
         ## GENERIC SECTION
@@ -192,5 +218,9 @@ Set($ExternalSettings, {   # AN EXAMPLE DB SERVICE
         'db_service_name'           =>  'My_MySQL'
     },
 } );
+
+=back
+
+=cut
 
 1;
