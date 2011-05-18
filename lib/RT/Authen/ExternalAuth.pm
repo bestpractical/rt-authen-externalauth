@@ -129,7 +129,7 @@ General Public License. The license is distributed with
 this package in the LICENSE file found in the directory 
 root.
 
-=cut    
+=cut
 
 use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
