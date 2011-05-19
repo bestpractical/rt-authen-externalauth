@@ -1,0 +1,41 @@
+use strict;
+use warnings;
+
+### after: use lib qw(@RT_LIB_PATH@);
+use lib qw(/opt/rt3/local/lib /opt/rt3/lib);
+
+use RT;
+RT::LoadConfig();
+RT::Init();
+
+my @services = @{ $RT::ExternalInfoPriority || [] }, @{ $RT::ExternalAuthPriority || [] };
+my %seen;
+foreach my $service ( splice @services ) {
+    my $config = $RT::ExternalSettings->{ $service };
+    next unless $config->{'type'} eq 'ldap';
+    next unless @{ $config->{'attr_match_list'} } > 1;
+    next if $seen{ $service }++;
+
+    push @services, $service;
+}
+unless ( @services ) {
+    print "No LDAP services with more than one field in attr_match_list\n";
+    exit 0;
+}
+
+foreach my $service ( @service ) {
+    $RT::Logger->info("Checking service $service");
+
+    find_conflicts( $service, $RT::ExternalSettings->{ $service } );
+}
+
+sub find_conlicts {
+    my ($name, $config) = @_;
+
+    my $ldap = RT::Authen::ExternalAuth::LDAP::_GetBoundLdapObj($config);
+    return unless $ldap;
+
+
+
+}
+
