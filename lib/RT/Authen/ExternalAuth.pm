@@ -256,25 +256,32 @@ sub UpdateUserInfo {
     # then I'll update all the info for disabled users
 
     if ($user_disabled) {
-        # Make sure principle is disabled in RT
-        my ($val, $message) = $UserObj->SetDisabled(1);
-        # Log what has happened
-        $RT::Logger->info("User marked as DISABLED (",
-                            $username,
-                            ") per External Service", 
-                            "($val, $message)\n");
-        $msg = "User Disabled";
-        
+        unless ( $UserObj->Disabled ) {
+            # Make sure principle is disabled in RT
+            my ($val, $message) = $UserObj->SetDisabled(1);
+            # Log what has happened
+            $RT::Logger->info("User marked as DISABLED (",
+                                $username,
+                                ") per External Service", 
+                                "($val, $message)\n");
+            $msg = "User Disabled";
+        }
+
         return ($updated, $msg);
     }    
         
     # Make sure principle is not disabled in RT
-    my ($val, $message) = $UserObj->SetDisabled(0);
-    # Log what has happened
-    $RT::Logger->info("User marked as ENABLED (",
-                        $username,
-                        ") per External Service",
+    if ( $UserObj->Disabled ) {
+        my ($val, $message) = $UserObj->SetDisabled(0);
+        unless ( $val ) {
+            $RT::Logger->error("Failed to enable user ($username) per External Service: $message");
+            return ($updated, "Failed to enable");
+        }
+
+        $RT::Logger->info("User ($username) was disabled, marked as ENABLED ",
+                        "per External Service",
                         "($val, $message)\n");
+    }
 
     # Update their info from external service using the username as the lookup key
     # CanonicalizeUserInfo will work out for itself which service to use
