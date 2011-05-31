@@ -35,7 +35,7 @@ Set($AutoCreateNonExternalUsers,    0);
 # Note that you may have as many external services as you wish. They will
 # be checked in the order specified in the Priority directives above.
 # e.g. 
-#   Set(ExternalAuthPriority,['My_LDAP','My_MySQL','My_Oracle','SecondaryLDAP','Other-DB']);
+#   Set($ExternalAuthPriority,['My_LDAP','My_MySQL','My_Oracle','SecondaryLDAP','Other-DB']);
 #
 Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                 'My_MySQL'   =>  {      ## GENERIC SECTION
