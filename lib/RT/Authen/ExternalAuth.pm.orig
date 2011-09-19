@@ -562,7 +562,7 @@ sub CanonicalizeUserInfo {
                         "called by", 
                         caller, 
                         "with:", 
-                        join(", ", map {sprintf("%s: %s", $_, ($args->{$_} ? $args->{$_} : ''))}
+                        join(", ", map {sprintf("%s: %s", $_, $args->{$_})}
                             sort(keys(%$args))));
 
     # Get the list of defined external services
@@ -648,7 +648,7 @@ sub CanonicalizeUserInfo {
 
     $RT::Logger->info(  (caller(0))[3], 
                         "returning", 
-                        join(", ", map {sprintf("%s: %s", $_, ($args->{$_} ? $args->{$_} : ''))}
+                        join(", ", map {sprintf("%s: %s", $_, $args->{$_})} 
                             sort(keys(%$args))));
 
     ### HACK: The config var below is to overcome the (IMO) bug in
