@@ -246,7 +246,7 @@ sub UpdateUserInfo {
     my $UserObj = RT::User->new($RT::SystemUser);
     $UserObj->Load($username);        
 
-    # If user is disabled, set the RT::Principle to disabled and return out of the function.
+    # If user is disabled, set the RT::Principal to disabled and return out of the function.
     # I think it's a waste of time and energy to update a user's information if they are disabled
     # and it could be a security risk if they've updated their external information with some 
     # carefully concocted code to try to break RT - worst case scenario, but they have been 
@@ -257,7 +257,7 @@ sub UpdateUserInfo {
 
     if ($user_disabled) {
         unless ( $UserObj->Disabled ) {
-            # Make sure principle is disabled in RT
+            # Make sure principal is disabled in RT
             my ($val, $message) = $UserObj->SetDisabled(1);
             # Log what has happened
             $RT::Logger->info("User marked as DISABLED (",
@@ -270,7 +270,7 @@ sub UpdateUserInfo {
         return ($updated, $msg);
     }    
         
-    # Make sure principle is not disabled in RT
+    # Make sure principal is not disabled in RT
     if ( $UserObj->Disabled ) {
         my ($val, $message) = $UserObj->SetDisabled(0);
         unless ( $val ) {
