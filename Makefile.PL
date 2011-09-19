@@ -6,6 +6,7 @@ license('GPL version 2');
 author('Mike Peachey <zordrak@cpan.org>');
 
 all_from('lib/RT/Authen/ExternalAuth.pm');
+readme_from;
 
 feature 'SSL LDAP Connections' =>
     -default => 0,
