@@ -274,7 +274,7 @@ sub UpdateUserInfo {
     if ( $UserObj->Disabled ) {
         my ($val, $message) = $UserObj->SetDisabled(0);
         unless ( $val ) {
-            $RT::Logger->error("Failed to enable user ($username) per External Service: $message");
+            $RT::Logger->error("Failed to enable user ($username) per External Service: ".($message||''));
             return ($updated, "Failed to enable");
         }
 
