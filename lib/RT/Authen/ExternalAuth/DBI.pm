@@ -135,6 +135,7 @@ sub GetAuth {
     my $db_table        = $config->{'table'};
     my $db_u_field      = $config->{'u_field'};
     my $db_p_field 	    = $config->{'p_field'};
+    my $db_p_check      = $config->{'p_check'};
     my $db_p_enc_pkg    = $config->{'p_enc_pkg'};
     my $db_p_enc_sub    = $config->{'p_enc_sub'};
     my $db_p_salt       = $config->{'p_salt'};
@@ -177,6 +178,34 @@ sub GetAuth {
     
     # Get the user's password from the database query result
     my $pass_from_db = $results_hashref->{$username}->{$db_p_field};        
+
+    if ( $db_p_check ) {
+        unless ( ref $db_p_check eq 'CODE' ) {
+            $RT::Logger->error( "p_check for $service is not a code" );
+            return 0;
+        }
+        my $check = 0;
+        local $@;
+        eval {
+            $check = $db_p_check->( $pass_from_db, $password );
+            1;
+        } or do {
+            $RT::Logger->error( "p_check for $service failed: $@" );
+            return 0;
+        };
+        unless ( $check ) {
+            $RT::Logger->info(
+                "$service AUTH FAILED for $username: Password Incorrect (via p_check)"
+            );
+        } else {
+            $RT::Logger->info(  (caller(0))[3], 
+                                "External Auth OK (",
+                                $service,
+                                "):", 
+                                $username);
+        }
+        return $check;
+    }
 
     # This is the encryption package & subroutine passed in by the config file
     $RT::Logger->debug( "Encryption Package:",
