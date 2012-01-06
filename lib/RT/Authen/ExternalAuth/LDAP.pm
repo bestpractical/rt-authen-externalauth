@@ -3,6 +3,7 @@ package RT::Authen::ExternalAuth::LDAP;
 use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
 use Net::LDAP::Util qw(ldap_error_name);
 use Net::LDAP::Filter;
+use Net::LDAPS;
 
 use strict;
 
@@ -428,10 +429,18 @@ sub _GetBoundLdapObj {
     my $ldap_user       = $config->{'user'};
     my $ldap_pass       = $config->{'pass'};
     my $ldap_tls        = $config->{'tls'};
+    my $use_ldaps       = $config->{'use_ldaps'};
     my $ldap_ssl_ver    = $config->{'ssl_version'};
     my $ldap_args       = $config->{'net_ldap_args'};
     
-    my $ldap = new Net::LDAP($ldap_server, @$ldap_args);
+    my $ldap = 0;
+    if ($use_ldaps) {
+		$ldap = new Net::LDAPS($ldap_server, @$ldap_args);
+    }
+    else {
+		$ldap = new Net::LDAP($ldap_server, @$ldap_args);
+    }
+    
     
     unless ($ldap) {
         $RT::Logger->critical(  (caller(0))[3],
