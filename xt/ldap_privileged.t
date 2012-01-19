@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test;
+use RT::Test testing => 'RT::Authen::ExternalAuth';
 use Net::LDAP;
 use RT::Authen::ExternalAuth;
 
@@ -26,7 +26,6 @@ my $entry    = {
 };
 $ldap->add( $dn, attr => [%$entry] );
 
-RT->Config->Set( Plugins                     => 'RT::Authen::ExternalAuth' );
 RT->Config->Set( ExternalAuthPriority        => ['My_LDAP'] );
 RT->Config->Set( ExternalInfoPriority        => ['My_LDAP'] );
 RT->Config->Set( ExternalServiceUsesSSLorTLS => 0 );

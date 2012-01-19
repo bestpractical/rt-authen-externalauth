@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test;
+use RT::Test testing => 'RT::Authen::ExternalAuth';
 use DBI;
 use File::Temp;
 use Digest::MD5;
@@ -28,7 +28,6 @@ $dbh->do(
 "INSERT INTO $table VALUES ( 'testuser', '$password', 'testuser\@invalid.tld')"
 );
 
-RT->Config->Set( Plugins                     => 'RT::Authen::ExternalAuth' );
 RT->Config->Set( ExternalAuthPriority        => ['My_SQLite'] );
 RT->Config->Set( ExternalInfoPriority        => ['My_SQLite'] );
 RT->Config->Set( ExternalServiceUsesSSLorTLS => 0 );
