@@ -233,7 +233,10 @@ sub CanonicalizeUserInfo {
         if ($ldap_msg->count == 1) {
             my $entry = $ldap_msg->first_entry();
             foreach my $key (keys(%{$config->{'attr_map'}})) {
-                if ($RT::LdapAttrMap->{$key} eq 'dn') {
+                # XXX TODO: This legacy code wants to be removed since modern
+                # configs will always fall through to the else and the logic is
+                # weird even if you do have the old config.
+                if ($RT::LdapAttrMap and $RT::LdapAttrMap->{$key} eq 'dn') {
                     $params{$key} = $entry->dn();
                 } else {
                     $params{$key} = 
