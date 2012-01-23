@@ -1,3 +1,8 @@
+0.09_01 2012-01-23	Thomas Sibley
+	* Improved logic when dealing with Disabled/disabling users
+	* Configurable group membership attribute values
+	* Group membership tests
+
 0.09 2011-05-06 Kevin Falcone
 	* compatibility fixes for 3.8.10 and 4.0.0
 	* author testsuite
