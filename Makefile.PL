@@ -34,4 +34,5 @@ requires_rt('3.8.2');
 
 &auto_install();
 
+sign;
 &WriteAll;
