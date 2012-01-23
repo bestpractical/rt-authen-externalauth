@@ -4,11 +4,12 @@ author:
   - 'Mike Peachey'
   - 'Mike Peachey <zordrak@cpan.org>'
 build_requires:
-  ExtUtils::MakeMaker: 6.42
+  ExtUtils::MakeMaker: 6.36
 configure_requires:
-  ExtUtils::MakeMaker: 6.42
+  ExtUtils::MakeMaker: 6.36
 distribution_type: module
-generated_by: 'Module::Install version 1.01'
+dynamic_config: 1
+generated_by: 'Module::Install version 1.04'
 license: gpl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -19,7 +20,6 @@ no_index:
     - etc
     - html
     - inc
-    - t
     - xt
 recommends:
   CGI::Cookie: 0
