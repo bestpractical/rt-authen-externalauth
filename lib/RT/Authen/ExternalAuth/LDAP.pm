@@ -1,7 +1,7 @@
 package RT::Authen::ExternalAuth::LDAP;
 
 use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
-use Net::LDAP::Util qw(ldap_error_name);
+use Net::LDAP::Util qw(ldap_error_name escape_filter_value);
 use Net::LDAP::Filter;
 
 use strict;
@@ -19,6 +19,7 @@ sub GetAuth {
     my $filter          = $config->{'filter'};
     my $group           = $config->{'group'};
     my $group_attr      = $config->{'group_attr'};
+    my $group_attr_val  = $config->{'group_attr_value'} || 'dn';
     my $attr_map        = $config->{'attr_map'};
     my @attrs           = ('dn');
 
@@ -71,7 +72,9 @@ sub GetAuth {
         return 0;
     }
 
-    my $ldap_dn = $ldap_msg->first_entry->dn;
+    my $ldap_entry = $ldap_msg->first_entry;
+    my $ldap_dn    = $ldap_entry->dn;
+
     $RT::Logger->debug( "Found LDAP DN:", 
                         $ldap_dn);
 
@@ -94,8 +97,14 @@ sub GetAuth {
 
     # The user is authenticated ok, but is there an LDAP Group to check?
     if ($group) {
-        # If we've been asked to check a group...
-        $filter = Net::LDAP::Filter->new("(${group_attr}=${ldap_dn})");
+        my $group_val = lc $group_attr_val eq 'dn'
+                            ? $ldap_dn
+                            : $ldap_entry->get_value($group_attr_val);
+
+        # Fallback to the DN if the user record doesn't have a value
+        $group_val = $ldap_dn unless defined $group_val;
+
+        $filter = Net::LDAP::Filter->new("(${group_attr}=" . escape_filter_value($group_val) . ")");
         
         $RT::Logger->debug( "LDAP Search === ",
                             "Base:",
