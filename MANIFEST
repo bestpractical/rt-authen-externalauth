@@ -14,6 +14,7 @@ inc/Module/Install/Fetch.pm
 inc/Module/Install/Include.pm
 inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
+inc/Module/Install/ReadmeFromPod.pm
 inc/Module/Install/RTx.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
@@ -27,5 +28,6 @@ MANIFEST			This list of files
 META.yml
 README
 xt/ldap.t
+xt/ldap_group.t
 xt/ldap_privileged.t
 xt/sqlite.t
