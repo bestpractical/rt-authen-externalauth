@@ -1,6 +1,11 @@
 use strict;
 use warnings;
 
+# This lets us change config during runtime without restarting
+BEGIN {
+    $ENV{RT_TEST_WEB_HANDLER} = 'inline';
+}
+
 use RT::Test tests => undef, testing => 'RT::Authen::ExternalAuth';
 use Net::LDAP;
 use RT::Authen::ExternalAuth;
@@ -37,6 +42,7 @@ $ldap->add(
     attr => [
         cn          => "test group",
         memberDN    => [ "uid=testuser1,$users_dn" ],
+        memberUid   => [ "testuser2" ],
         objectClass => 'Group',
     ],
 );
@@ -70,6 +76,7 @@ RT->Config->Set(
 
 my ( $baseurl, $m ) = RT::Test->started_ok();
 
+diag "Using DN to match group membership";
 diag "test uri login";
 {
     ok( !$m->login( 'fakeuser', 'password' ), 'not logged in with fake user' );
@@ -87,6 +94,20 @@ diag "test user creation";
     my ($ok,$msg) = $testuser->Load( 'testuser1' );
     ok($ok,$msg);
     is($testuser->EmailAddress,'testuser1@example.com');
+}
+
+$m->logout;
+
+diag "Using uid to match group membership";
+
+RT->Config->Get('ExternalSettings')->{My_LDAP}{group_attr} = 'memberUid';
+RT->Config->Get('ExternalSettings')->{My_LDAP}{group_attr_value} = 'uid';
+diag "test uri login";
+{
+    ok( !$m->login( 'testuser1', 'password' ), 'not logged in with real user not in group' );
+    $m->warning_like(qr/FAILED LOGIN for testuser1/);
+
+    ok( $m->login( 'testuser2', 'password' ), 'logged in' );
 }
 
 $ldap->unbind();
