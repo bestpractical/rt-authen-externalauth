@@ -102,7 +102,10 @@ sub GetAuth {
                             : $ldap_entry->get_value($group_attr_val);
 
         # Fallback to the DN if the user record doesn't have a value
-        $group_val = $ldap_dn unless defined $group_val;
+        unless (defined $group_val) {
+            $group_val = $ldap_dn;
+            $RT::Logger->debug("Attribute '$group_attr_val' has no value; falling back to '$group_val'");
+        }
 
         $filter = Net::LDAP::Filter->new("(${group_attr}=" . escape_filter_value($group_val) . ")");
         
