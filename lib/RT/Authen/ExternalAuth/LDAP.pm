@@ -136,6 +136,10 @@ sub GetAuth {
         }
 
         unless ($ldap_msg->count == 1) {
+            $RT::Logger->debug(
+                "LDAP group membership check returned",
+                $ldap_msg->count, "results"
+            );
             $RT::Logger->info(  $service,
                                 "AUTH FAILED:", 
                                 $username);
