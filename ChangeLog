@@ -1,3 +1,6 @@
+0.09_02 2012-01-26	Thomas Sibley
+	* Improved logging inside the LDAP group membership check
+
 0.09_01 2012-01-23	Thomas Sibley
 	* Improved logic when dealing with Disabled/disabling users
 	* Configurable group membership attribute values
