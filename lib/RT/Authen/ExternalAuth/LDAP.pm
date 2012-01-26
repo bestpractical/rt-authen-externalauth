@@ -111,7 +111,7 @@ sub GetAuth {
         
         $RT::Logger->debug( "LDAP Search === ",
                             "Base:",
-                            $base,
+                            $group,
                             "== Filter:", 
                             $filter->as_string,
                             "== Attrs:", 
