@@ -23,6 +23,10 @@ sub GetAuth {
     my $attr_map        = $config->{'attr_map'};
     my @attrs           = ('dn');
 
+    # Make sure we fetch the user attribute we'll need for the group check
+    push @attrs, $group_attr_val
+        unless lc $group_attr_val eq 'dn';
+
     # Empty parentheses as filters cause Net::LDAP to barf.
     # We take care of this by using Net::LDAP::Filter, but
     # there's no harm in fixing this right now.
@@ -107,6 +111,8 @@ sub GetAuth {
             $RT::Logger->debug("Attribute '$group_attr_val' has no value; falling back to '$group_val'");
         }
 
+        # We only need the dn for the actual group since all we care about is existence
+        @attrs  = qw(dn);
         $filter = Net::LDAP::Filter->new("(${group_attr}=" . escape_filter_value($group_val) . ")");
         
         $RT::Logger->debug( "LDAP Search === ",
