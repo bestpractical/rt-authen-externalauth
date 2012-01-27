@@ -1,3 +1,7 @@
+0.09_03 2012-01-27	Thomas Sibley
+	* Fetch the necessary attributes when group_attr_value is used
+	* Test escaping of commas during the group check
+
 0.09_02 2012-01-26	Thomas Sibley
 	* Improved logging inside the LDAP group membership check
 
