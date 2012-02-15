@@ -1,0 +1,50 @@
+#
+# ActiveDirectory example from the community circa 2/15/2012
+#
+
+Set($ExternalAuthPriority, ['My_LDAP']
+);
+Set($ExternalInfoPriority, ['My_LDAP']
+);
+Set($ExternalServiceUsesSSLorTLS, 0);
+Set($AutoCreateNonExternalUsers, 0);
+Set($ExternalSettings, {
+    'My_LDAP' =>  {
+                   'type' =>  'ldap',
+                   'server' => 'dc.internal.example.com',
+                   'user' => 'someuser',
+                   'pass' => 'someuserpassword',
+                   'base' => 'dc=example,dc=com',
+                   'filter' => '(objectClass=*)',
+                   'd_filter' => '(objectClass=FooBarBaz)',
+                   'tls' => 0,
+                   'ssl_version' => 3,
+                   'net_ldap_args' => [ version => 3, port => 3268 ],
+                   #'group' => 'GROUP_NAME',
+                   #'group_attr' => 'GROUP_ATTR',
+                   'attr_match_list' => [
+                                         'Name',
+                                         'EmailAddress',
+                                         'RealName',
+                                         'WorkPhone',
+                                         'Address2'
+                                        ],
+                   'attr_map' =>  {
+                                   'Name' => 'sAMAccountName',
+                                   'EmailAddress' => 'mail',
+                                   'Organization' => 'physicalDeliveryOfficeName',
+                                   'RealName' => 'cn',
+                                   'ExternalAuthId' => 'sAMAccountName',
+                                   'Gecos' => 'sAMAccountName',
+                                   'WorkPhone' => 'telephoneNumber',
+                                   'Address1' => 'streetAddress',
+                                   'City' => 'l',
+                                   'State' => 'st',
+                                   'Zip' => 'postalCode',
+                                   'Country' => 'co'
+                                  }
+                  }, # END My_LDAP
+} # END ExternalSettings hash
+); # END Set()
+
+1;
