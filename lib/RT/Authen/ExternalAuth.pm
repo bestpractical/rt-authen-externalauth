@@ -484,7 +484,7 @@ sub UserDisabled {
     my $username = shift;
     my $user_disabled = 0;
     
-    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : undef;
+    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
 
     # For each named service in the list
     # Check to see if the user is found in the external service
