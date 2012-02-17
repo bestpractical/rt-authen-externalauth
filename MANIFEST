@@ -28,6 +28,7 @@ MANIFEST			This list of files
 META.yml
 README
 xt/ldap.t
+xt/ldap_escaping.t
 xt/ldap_group.t
 xt/ldap_privileged.t
 xt/sqlite.t
