@@ -1,3 +1,6 @@
+0.10_02 2012-02-23  Thomas Sibley
+	* Escape usernames in filter values so special characters don't die
+
 0.10 2012-02-17  Thomas Sibley
 	* Silence confusing log messages when $ExternalInfoPriority is empty
 
