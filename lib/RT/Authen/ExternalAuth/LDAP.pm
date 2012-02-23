@@ -39,7 +39,7 @@ sub GetAuth {
     $filter = Net::LDAP::Filter->new(   '(&(' . 
                                         $attr_map->{'Name'} . 
                                         '=' . 
-                                        $username . 
+                                        escape_filter_value($username) . 
                                         ')' . 
                                         $filter . 
                                         ')'
@@ -188,7 +188,7 @@ sub CanonicalizeUserInfo {
     my @attrs = values(%{$config->{'attr_map'}});
 
     # This is a bit confusing and probably broken. Something to revisit..
-    my $filter_addition = ($key && $value) ? "(". $key . "=$value)" : "";
+    my $filter_addition = ($key && $value) ? "(". $key . "=". escape_filter_value($value) .")" : "";
     if(defined($filter) && ($filter ne "()")) {
         $filter = Net::LDAP::Filter->new(   "(&" . 
                                             $filter . 
@@ -315,7 +315,7 @@ sub UserExists {
                                                     '(' . 
                                                     $config->{'attr_map'}->{'Name'} . 
                                                     '=' . 
-                                                    $username . 
+                                                    escape_filter_value($username) . 
                                                     '))'
                                         );
     }
@@ -400,7 +400,7 @@ sub UserDisabled {
                                                     '(' . 
                                                     $config->{'attr_map'}->{'Name'} . 
                                                     '=' . 
-                                                    $username . 
+                                                    escape_filter_value($username) . 
                                                     '))'
                                                 );
     } else {
