@@ -149,6 +149,32 @@ sub DoAuth {
         $no_info_check = 1;
     }
 
+    # Ensure people don't misconfigure DBI auth to point to RT's Users table
+    for my $service (keys %$RT::ExternalSettings) {
+        my %conf = %{ $RT::ExternalSettings->{$service} };
+        next unless $conf{type} eq 'db';
+
+        # user/pass might be different (root, for instance)
+        next unless lc $conf{server} eq lc $RT::DatabaseHost and
+                    lc $conf{database} eq lc $RT::DatabaseName and
+                    lc $conf{table} eq 'users';
+
+        $RT::Logger->error(
+            "RT::Authen::ExternalAuth should _not_ be configured with a database auth service ".
+            "that points back to RT's internal Users table.  Removing the service '$service'! ".
+            "Please remove it from your config file."
+        );
+
+        # Remove it!
+        delete $RT::ExternalSettings->{$service};
+
+        @$RT::ExternalAuthPriority = grep { $_ ne $service } @$RT::ExternalAuthPriority
+            if $RT::ExternalAuthPriority;
+
+        @$RT::ExternalInfoPriority = grep { $_ ne $service } @$RT::ExternalInfoPriority
+            if $RT::ExternalInfoPriority;
+    }
+
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
     my $pass_bypass = 0;
     my $success = 0;
