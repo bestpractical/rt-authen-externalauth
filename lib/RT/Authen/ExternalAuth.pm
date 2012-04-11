@@ -136,6 +136,20 @@ use RT::Authen::ExternalAuth::DBI;
 
 use strict;
 
+# Ensure passwords are obfuscated on the System Configuration page
+$RT::Config::META{ExternalSettings}->{Obfuscate} = sub {
+    my ($config, $sources, $user) = @_;
+
+    # XXX $user is never passed from RT as of 4.0.5 :(
+    my $msg = 'Password not printed';
+       $msg = $user->loc($msg) if $user and $user->Id;
+
+    for my $source (values %$sources) {
+        $source->{pass} = $msg;
+    }
+    return $sources;
+};
+
 sub DoAuth {
     my ($session,$given_user,$given_pass) = @_;
 
