@@ -34,5 +34,14 @@ requires_rt('3.8.2');
 
 &auto_install();
 
+my ($lib_path) = $INC{'RT.pm'} =~ /^(.*)[\\\/]/;
+my $local_lib_path = "$RT::LocalPath/lib";
+substitute(
+    {
+        RT_LIB_PATH => join( ' ', $local_lib_path, $lib_path ),
+    },
+    'lib/RT/Authen/ExternalAuth/Test.pm',
+);
+
 sign;
 &WriteAll;
