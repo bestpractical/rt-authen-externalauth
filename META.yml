@@ -1,5 +1,5 @@
 ---
-abstract: 'RT Authen-ExternalAuth Extension'
+abstract: 'RT Authentication using External Sources'
 author:
   - 'Mike Peachey'
   - 'Mike Peachey <zordrak@cpan.org>'
