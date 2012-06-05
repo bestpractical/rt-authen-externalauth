@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test testing => 'RT::Authen::ExternalAuth';
+use RT::Authen::ExternalAuth::Test;
 use DBI;
 use File::Temp;
 use Digest::MD5;

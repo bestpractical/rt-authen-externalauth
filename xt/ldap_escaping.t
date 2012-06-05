@@ -1,14 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test tests => undef, testing => 'RT::Authen::ExternalAuth';
-use Net::LDAP;
-use RT::Authen::ExternalAuth;
-
-eval { require Net::LDAP::Server::Test; 1; } or do {
-    plan skip_all => 'Unable to test without Net::Server::LDAP::Test';
-};
-
+use RT::Authen::ExternalAuth::Test tests => undef, ldap => 1;
 
 my $ldap_port = 1024 + int rand(10000) + $$ % 1024;
 ok( my $server = Net::LDAP::Server::Test->new( $ldap_port, auto_schema => 1 ),

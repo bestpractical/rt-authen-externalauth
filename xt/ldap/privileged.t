@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1, tests => 13;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 15;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 

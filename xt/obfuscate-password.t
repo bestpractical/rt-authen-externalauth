@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Test testing => 'RT::Authen::ExternalAuth';
+use RT::Authen::ExternalAuth::Test;
 
 RT->Config->Set(
     ExternalSettings => {
