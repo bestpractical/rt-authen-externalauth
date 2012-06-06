@@ -623,7 +623,7 @@ sub CanonicalizeUserInfo {
         my $field = shift;
         return $args->{ $field } if keys %$args;
 
-        return undef unless $UserObj->can( $field );
+        return undef if !$UserObj->can( $field ) && !exists $UserObj->_ClassAccessible->{$field};
         return $UserObj->$field();
     };
 

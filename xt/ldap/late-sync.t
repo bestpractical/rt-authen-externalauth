@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1, tests => 19;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 20;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 my ($server, $client) = $class->bootstrap_ldap_basics;
@@ -75,15 +75,14 @@ MAIL
 sub custom_login {
     my $user = shift || 'root';
     my $pass = shift || 'password';
-   
+
     $m->logout;
 
     my $url = $m->rt_base_url;
     $m->get($url . "?user=$user;pass=$pass");
     return $m->status == 200
         && $m->content =~ qr/Logout/i
-        && $m->content =~ m{<span>\Q$user\E\@invalid\.tld</span>}i;
+        && $m->content =~ m{<span class="current-user">\Q$user\E\@invalid\.tld</span>}i;
 }
 
 $client->unbind();
-$m->get_warnings;
