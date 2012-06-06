@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1, tests => 20;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 19;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 my ($server, $client) = $class->bootstrap_ldap_basics;
@@ -56,10 +56,9 @@ MAIL
         ok($user->Privileged, 'privileged user');
     }
     {
-        ok( $m->login( $username, 'password' ), 'logged in' );
+        ok( $m->login( $username, 'password', logout => 1 ), 'logged in' );
         unlike( $m->uri, qr!SelfService!, 'privileged home page' );
     }
 }
 
 $client->unbind();
-$m->get_warnings;

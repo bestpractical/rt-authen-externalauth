@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test dbi => 'SQLite', tests => 19;
+use RT::Authen::ExternalAuth::Test dbi => 'SQLite', tests => 21;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 my $dir    = File::Temp::tempdir( CLEANUP => 1 );

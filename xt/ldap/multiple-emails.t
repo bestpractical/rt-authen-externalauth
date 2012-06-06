@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1, tests => 43;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 44;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 my ($server, $client) = $class->bootstrap_ldap_basics;
@@ -115,7 +115,7 @@ MAIL
     }
 
     {
-        ok( $m->login( $username, 'password' ), 'logged in' );
+        ok( $m->login( $username, 'password', logout => 1 ), 'logged in' );
 
         ok( $m->goto_create_ticket( $queue ), "go to create ticket" );
         $m->form_name('TicketCreate');
@@ -158,7 +158,6 @@ MAIL
 }
 
 $client->unbind();
-$m->get_warnings;
 
 sub new_user { return $class->add_ldap_user_simple( alias => '%name@alternative.tld' ) }
 
