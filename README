@@ -1,13 +1,13 @@
 NAME
-      RT::Authen::ExternalAuth - RT Authentication using External Sources
+    RT::Authen::ExternalAuth - RT Authentication using External Sources
 
 DESCRIPTION
-      A complete package for adding external authentication mechanisms
-      to RT. It currently supports LDAP via Net::LDAP and External Database
-      authentication for any database with an installed DBI driver.
+    A complete package for adding external authentication mechanisms to RT.
+    It currently supports LDAP via Net::LDAP and External Database
+    authentication for any database with an installed DBI driver.
 
-      It also allows for authenticating cookie information against an
-      external database through the use of the RT-Authen-CookieAuth extension.
+    It also allows for authenticating cookie information against an external
+    database through the use of the RT-Authen-CookieAuth extension.
 
 UPGRADING
     If you are upgrading from an earlier version of this extension, you must
@@ -95,6 +95,53 @@ INSTALLATION
     which should be added to your site configuration in
     $RTHOME/etc/RT_SiteConfig.pm
 
+CONFIGURATION
+  Generic
+   attr_match_list
+    The list of RT attributes that uniquely identify a user. It's
+    recommended to use 'Name' and 'EmailAddress' to save encountering
+    problems later. Example:
+
+        'attr_match_list' => [
+            'Name',
+            'EmailAddress', 
+            'RealName',
+            'WorkPhone', 
+        ],
+
+   attr_map
+    Mapping of RT attributes on to attributes in the external source.
+    Example:
+
+        'attr_map' => {
+            'Name'         => 'sAMAccountName',
+            'EmailAddress' => 'mail',
+            'Organization' => 'physicalDeliveryOfficeName',
+            'RealName'     => 'cn',
+            ...
+        },
+
+    Since version 0.10 it's possible to map one RT field to multiple
+    external attributes, for example:
+
+        attr_map => {
+            EmailAddress => ['mail', 'alias'],
+            ...
+        },
+
+    Note that only one value storred in RT. However, search goes by all
+    external attributes if such RT field list in "attr_match_list". On
+    create or update entered value is used as long as it's valid. If user
+    didn't enter value then value stored in the first external attribute is
+    used. Config example:
+
+        attr_match_list => ['Name', 'EmailAddress'],
+        attr_map => {
+            Name         => 'account',
+            EmailAddress => ['mail', 'alias'],
+            ...
+        },
+
 AUTHOR
         Mike Peachey
         Jennic Ltd.
@@ -107,4 +154,9 @@ COPYRIGHT AND LICENCE
     This software is released under version 2 of the GNU General Public
     License. The license is distributed with this package in the LICENSE
     file found in the directory root.
+
+  WorkaroundAutoCreate
+    RT has $AutoCreate option in the config. However, up to RT 4.0.0 this
+    option is no used when account created by incomming email. This module
+    workarounds this problem.
 
