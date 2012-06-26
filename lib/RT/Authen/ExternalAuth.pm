@@ -849,7 +849,7 @@ sub FindRecordsWithAlternatives {
         my @alternatives = grep defined && length && $_ ne $args{ $search_by }, values %params;
 
         # Don't Check any more services
-        return @alternatives;
+        return ($search_by, @alternatives);
     }
     return;
 }
