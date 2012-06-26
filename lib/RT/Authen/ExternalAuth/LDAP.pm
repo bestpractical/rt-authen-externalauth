@@ -135,9 +135,28 @@ sub CanonicalizeUserInfo {
     # Load the config
     my $config = $RT::ExternalSettings->{$service};
 
+    # Default smtp: as the most common case
+    my %filter_prefix = (
+                        proxyAddresses => [ 'smtp:'],
+                        %{$config->{'attr_prefix'}}
+                        );
+
+    # Build the LDAP filters
+    my @filter_list;
+    foreach my $filter_key ( ref $key ? @$key : ($key) ){
+        push @filter_list, "($filter_key=" . escape_filter_value( $value ) . ")";
+
+        # Prepend prefixes for AD
+        if( exists $filter_prefix{$filter_key} ){
+            foreach my $prefix ( @{ $filter_prefix{$filter_key} } ){
+                push @filter_list, "($filter_key=" . escape_filter_value( $prefix . $value ) . ")";
+           }
+        }
+    }
+
     my $filter = JoinFilters(
         '&',
-        JoinFilters('|', map "($_=". escape_filter_value( $value ) .")", ref $key? @$key: ($key) ),
+        JoinFilters('|', @filter_list ),
         $config->{'filter'},
     ) or return (0);
 

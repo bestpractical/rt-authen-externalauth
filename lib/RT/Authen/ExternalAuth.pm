@@ -151,10 +151,10 @@ external attributes, for example:
         ...
     },
 
-Note that only one value storred in RT. However, search goes by
-all external attributes if such RT field list in L</attr_match_list>.
-On create or update entered value is used as long as it's valid.
-If user didn't enter value then value stored in the first external
+Note that only one value is stored in RT. However, the search includes
+all external attributes if the RT field is listed in L</attr_match_list>.
+On create or update, the entered value is used as long as it's valid.
+If the user didn't enter a value then the value stored in the first external
 attribute is used. Config example:
 
     attr_match_list => ['Name', 'EmailAddress'],
@@ -163,6 +163,25 @@ attribute is used. Config example:
         EmailAddress => ['mail', 'alias'],
         ...
     },
+
+=head3 attr_prefix
+
+In some cases, multiple-value LDAP attributes may have a prefix on the values
+in the LDAP entry. The C<attr_prefix> allows you to set values to prepend to
+filter terms before searching. For example, if you want an email address to
+match 'alias' in an LDAP entry that prepends 'other:' to the email
+address, you can do the following:
+
+    attr_prefix => {
+        alias => ['other:'],
+        ...
+    },
+
+The key must be included in the C<attr_map> or it won't be checked.
+To search on an attribute with no value prepended in addition to
+some prepended values, include an empty string C<''> in the list.
+The most common case for this is the proxyAddresses needing the
+value 'smtp:' prepended, so that happens automatically.
 
 =head1 AUTHOR
         Mike Peachey
