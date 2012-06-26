@@ -179,6 +179,7 @@ This software is released under version 2 of the GNU
 General Public License. The license is distributed with
 this package in the LICENSE file found in the directory 
 root.
+
 =cut    
 
 use RT::Authen::ExternalAuth::LDAP;
@@ -773,6 +774,7 @@ sub CanonicalizeUserInfo {
         my (%other) = FindRecordsByOtherFields( $self, %args );
         while ( my ($search_by, $values) = each %other ) {
             foreach my $value ( @$values ) {
+                next if not defined $value; # Entry in config, but no value in LDAP
                 my $rv = $orig->( $self, $search_by => $value );
                 return $rv if $self->id;
             }

@@ -13,7 +13,7 @@ ok($queue->id, "loaded the General queue");
 RT->Config->Set( AutoCreate                  => { Privileged => 1 } );
 
 RT->Config->Get('ExternalSettings')->{'My_LDAP'}{'attr_map'}{'EmailAddress'}
-    = ['mail', 'alias'];
+    = ['mail', 'alias', 'proxyAddresses', 'foo'];
 
 RT::Test->set_rights(
     { Principal => 'Everyone', Right => [qw(SeeQueue ShowTicket CreateTicket)] },
