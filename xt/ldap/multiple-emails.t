@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use RT::Authen::ExternalAuth::Test ldap => 1, tests => 50;
+use RT::Authen::ExternalAuth::Test ldap => 1, tests => 59;
 my $class = 'RT::Authen::ExternalAuth::Test';
 
 my ($server, $client) = $class->bootstrap_ldap_basics;
@@ -16,7 +16,7 @@ RT->Config->Get('ExternalSettings')->{'My_LDAP'}{'attr_map'}{'EmailAddress'}
     = ['mail', 'alias', 'proxyAddresses', 'foo'];
 
 RT->Config->Get('ExternalSettings')->{'My_LDAP'}{'attr_prefix'}{'proxyAddresses'}
-    = [ 'smtp:', 'SMTP:', 'X400:', '' ];
+    = [ 'SMTP:', 'X400:', '' ];
 
 RT::Test->set_rights(
     { Principal => 'Everyone', Right => [qw(SeeQueue ShowTicket CreateTicket)] },
@@ -184,6 +184,50 @@ MAIL
         is( $user->id, $user->id );
         is( $user->Name, $username );
         is( $user->EmailAddress, "$username\@alternative.tld" );
+    }
+}
+
+
+{
+    my $username = new_user();
+    my $create_user = RT::User->new(RT->SystemUser);
+    my ($id, $msg) = $create_user->Create(
+        Name => $username,
+        EmailAddress => "$username\@invalid.tld",
+        RealName => 'Test User',
+        Gecos => $username );
+    ok ($id, "Created user $username, with id $id. " . $msg );
+
+    diag "Create ticket from email with existing user.";
+    my $smtp = substr($username, 1);
+    {
+        my $mail = << "MAIL";
+Subject: Test
+From: $smtp\@alternative.tld
+
+test
+MAIL
+
+        my ($status, $id) = RT::Test->send_via_mailgate($mail);
+        is ($status >> 8, 0, "The mail gateway exited normally");
+        ok ($id, "got id of a newly created ticket - $id");
+
+        my $ticket = RT::Ticket->new( $RT::SystemUser );
+        $ticket->Load( $id );
+        ok ($ticket->id, 'loaded ticket');
+
+        my $user = $ticket->CreatorObj;
+        is( $user->id, $create_user->id );
+        is( $user->Name, $username, "Name on ticket is $username");
+        is( $user->EmailAddress, "$username\@invalid.tld" );
+
+        my $txns = $ticket->Transactions;
+        $txns->Limit( FIELD => 'Type', VALUE => 'Create' );
+        my $txn = $txns->First;
+        ok( $txn, 'Got Create transaction' );
+        my $address_ref = $txn->Addresses;
+        is( $address_ref->{From}[0]->address, "$smtp\@alternative.tld",
+            "From address set with incoming mail address.");
     }
 }
 
