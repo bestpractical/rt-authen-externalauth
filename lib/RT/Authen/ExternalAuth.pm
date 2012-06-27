@@ -154,8 +154,7 @@ external attributes, for example:
 Note that only one value is stored in RT. However, the search includes
 all external attributes if the RT field is listed in L</attr_match_list>.
 On create or update, the entered value is used as long as it's valid.
-If the user didn't enter a value then the value stored in the first external
-attribute is used. Config example:
+Below is an example configuration:
 
     attr_match_list => ['Name', 'EmailAddress'],
     attr_map => {
@@ -163,6 +162,13 @@ attribute is used. Config example:
         EmailAddress => ['mail', 'alias'],
         ...
     },
+
+If the user didn't enter a value then the value stored in the first external
+attribute is used, in the example above 'mail'. In the common case of email,
+if an email comes in from an address matched via an 'alias' entry, after the
+match the value in 'mail' will be used for EmailAddress. So when mapping
+LDAP entries to RT, make sure the first entry in the array of options to
+EmailAddress is the one you want RT to use internally as the EmailAddress.
 
 =head3 attr_prefix
 
