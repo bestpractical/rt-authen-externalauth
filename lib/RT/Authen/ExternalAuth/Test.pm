@@ -131,6 +131,26 @@ sub add_ldap_user {
     return $ldap{'client'}->add( $dn, attr => [%args] );
 }
 
+=head1 add_ldap_user_simple
+
+Create a test username and add a test user to the test LDAP directory
+for testing. Accepts a hash of ldap entries and values.
+
+The %name placeholder in test email addresses is replaced
+with the generated test username before the LDAP entries are added
+to the test server.
+
+Pass add_proxy_addresses => 'test.com' to have proxyAddresses entries created to
+simulate AD. This option will add the following:
+
+    proxyAddresses smtp:testuser1@test.com
+    proxyAddresses smtp:estuser1@test.com
+    proxyAddresses SMTP:testuser1@test.com
+
+Returns the test username generated.
+
+=cut
+
 { my $i = 0;
 sub add_ldap_user_simple {
     my $self = shift;
@@ -139,6 +159,17 @@ sub add_ldap_user_simple {
     my $name = delete $args{'cn'} || "testuser". ++$i;
 
     s/\%name\b/$name/g foreach grep defined, values %args;
+
+    # The goal is to make these entries look like 'typical' AD
+    if( exists $args{add_proxy_addresses} && $args{add_proxy_addresses} ){
+        $args{proxyAddresses} = [
+           'smtp:' . $name . '@' . $args{add_proxy_addresses},
+           'smtp:' . substr($name,1) . '@' . $args{add_proxy_addresses},
+           'SMTP:' . $name . '@' . $args{add_proxy_addresses},
+       ];
+    }
+
+    delete $args{add_proxy_addresses}; # Don't want this in the LDAP entry
 
     $self->add_ldap_user(
         cn    => $name,
