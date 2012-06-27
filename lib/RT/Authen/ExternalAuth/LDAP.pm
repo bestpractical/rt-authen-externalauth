@@ -135,11 +135,11 @@ sub CanonicalizeUserInfo {
     # Load the config
     my $config = $RT::ExternalSettings->{$service};
 
+    my %config_prefix;
+    %config_prefix = %{$config->{'attr_prefix'}} if defined $config->{'attr_prefix'};
+
     # Default smtp: as the most common case
-    my %filter_prefix = (
-                        proxyAddresses => [ 'smtp:'],
-                        %{$config->{'attr_prefix'}}
-                        );
+    my %filter_prefix = ( proxyAddresses => [ 'smtp:'], %config_prefix );
 
     # Build the LDAP filters
     my @filter_list;
