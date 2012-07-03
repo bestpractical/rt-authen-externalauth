@@ -1,3 +1,7 @@
+0.11    2012-07-03  Alex Vandiver
+	* Obfuscate passwords in RT's System Configuration page
+	* Set an empty CurrentUser on failure, instead of removing it entirely
+
 0.10_01 2012-02-23  Thomas Sibley
 	* Escape usernames in filter values so special characters don't die
 
