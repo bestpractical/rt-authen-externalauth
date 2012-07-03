@@ -288,12 +288,12 @@ sub DoAuth {
     # If we got here and don't have a user loaded we must have failed to
     # get a full, valid user from an authoritative external source.
     unless ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
-        delete $session->{'CurrentUser'};
+        $session->{'CurrentUser'} = RT::CurrentUser->new;
         return (0, "No User");
     }
 
     unless($success) {
-        delete $session->{'CurrentUser'};
+        $session->{'CurrentUser'} = RT::CurrentUser->new;
 	return (0, "Password Invalid");
     }
     
@@ -328,7 +328,7 @@ sub DoAuth {
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!
         if ($session->{'CurrentUser'}->UserObj->Disabled) {
-            delete $session->{'CurrentUser'};
+            $session->{'CurrentUser'} = RT::CurrentUser->new;
             return (0, "User account disabled, login denied");
         }
     }
@@ -345,8 +345,8 @@ sub DoAuth {
             # Do not delete the session. User stays logged in and
             # autohandler will not check the password again
     } else {
-            # Make SURE the session is deleted.
-            delete $session->{'CurrentUser'};
+            # Make SURE the session is purged to an empty user.
+            $session->{'CurrentUser'} = RT::CurrentUser->new;
             return (0, "Failed to authenticate externally");
             # This will cause autohandler to request IsPassword 
             # which will in turn call IsExternalPassword
