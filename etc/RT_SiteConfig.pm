@@ -128,6 +128,9 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         'net_ldap_args'             => [    version =>  3   ],
                                                         # Does authentication depend on group membership? What group name?
                                                         'group'                     =>  'GROUP_NAME',
+                                                        # What is the scope of the group search? (base, one, sub)
+                                                        # Optional; defaults to 'base', which is good enough for most cases. 'sub' is appropriate when you have nested groups
+                                                        'group_scope'               =>  'base',
                                                         # What is the attribute for the group object that determines membership?
                                                         'group_attr'                =>  'GROUP_ATTR',
                                                         # What is the attribute of the user entry that should be matched against group_attr above? (Optional; defaults to 'dn')
