@@ -25,7 +25,7 @@ $ldap->bind();
 my $users_dn = "ou=users,dc=bestpractical,dc=com";
 my $group_dn = "cn=test group,ou=groups,dc=bestpractical,dc=com";
 
-for (1 .. 2) {
+for (1 .. 3) {
     my $uid = "testuser$_";
     my $entry    = {
         cn           => "Test User $_",
@@ -44,6 +44,15 @@ $ldap->add(
         memberDN    => [ "uid=testuser1,$users_dn" ],
         memberUid   => [ "testuser2" ],
         objectClass => 'Group',
+    ],
+);
+
+$ldap->add(
+    "cn=subgroup,$group_dn",
+    attr => [
+        cn          => "subgroup",
+        memberUid   => [ "testuser3" ],
+        objectClass => "group",
     ],
 );
 
@@ -108,6 +117,31 @@ diag "test uri login";
     $m->warning_like(qr/FAILED LOGIN for testuser1/);
 
     ok( $m->login( 'testuser2', 'password' ), 'logged in' );
+}
+
+$m->logout;
+
+diag "Subgroup isn't used with default group_scope of base";
+{
+    local $TODO = 'Net::LDAP::Server::Test bug: https://rt.cpan.org/Ticket/Display.html?id=78612'
+        if $Net::LDAP::Server::Test::VERSION <= 0.13;
+    ok( !$m->login( 'testuser3', 'password' ), 'not logged in from subgroup' );
+    $m->logout;
+}
+
+diag "Using group_scope of sub not base";
+
+RT->Config->Get('ExternalSettings')->{My_LDAP}{group_scope} = 'sub';
+diag "test uri login";
+{
+    ok( !$m->login( 'testuser1', 'password' ), 'not logged in with real user not in group' );
+    $m->warning_like(qr/FAILED LOGIN for testuser1/);
+
+    ok( $m->login( 'testuser2', 'password' ), 'logged in as testuser2' );
+    $m->logout;
+
+    ok( $m->login( 'testuser3', 'password' ), 'logged in as testuser3 from subgroup' );
+    $m->logout;
 }
 
 $ldap->unbind();
