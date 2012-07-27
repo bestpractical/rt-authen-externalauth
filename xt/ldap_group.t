@@ -126,6 +126,7 @@ diag "Subgroup isn't used with default group_scope of base";
     local $TODO = 'Net::LDAP::Server::Test bug: https://rt.cpan.org/Ticket/Display.html?id=78612'
         if $Net::LDAP::Server::Test::VERSION <= 0.13;
     ok( !$m->login( 'testuser3', 'password' ), 'not logged in from subgroup' );
+    $m->warning_like(qr/FAILED LOGIN for testuser3/);
     $m->logout;
 }
 
