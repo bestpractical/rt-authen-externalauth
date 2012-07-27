@@ -20,6 +20,7 @@ sub GetAuth {
     my $group           = $config->{'group'};
     my $group_attr      = $config->{'group_attr'};
     my $group_attr_val  = $config->{'group_attr_value'} || 'dn';
+    my $group_scope     = $config->{'group_scope'} || 'base';
     my $attr_map        = $config->{'attr_map'};
     my @attrs           = ('dn');
 
@@ -118,6 +119,8 @@ sub GetAuth {
         $RT::Logger->debug( "LDAP Search === ",
                             "Base:",
                             $group,
+                            "== Scope:",
+                            $group_scope,
                             "== Filter:", 
                             $filter->as_string,
                             "== Attrs:", 
@@ -126,7 +129,7 @@ sub GetAuth {
         $ldap_msg = $ldap->search(  base   => $group,
                                     filter => $filter,
                                     attrs  => \@attrs,
-                                    scope  => 'base');
+                                    scope  => $group_scope);
 
         # And the user isn't a member:
         unless ($ldap_msg->code == LDAP_SUCCESS || 
