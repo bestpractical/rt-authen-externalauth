@@ -19,6 +19,7 @@ sub GetAuth {
     my $group           = $config->{'group'};
     my $group_attr      = $config->{'group_attr'};
     my $group_attr_val  = $config->{'group_attr_value'} || 'dn';
+    my $group_scope     = $config->{'group_scope'} || 'base';
     my $attr_map        = $config->{'attr_map'};
     my @attrs           = ('dn');
 
@@ -93,13 +94,35 @@ sub GetAuth {
 
         # We only need the dn for the actual group since all we care about is existence
         @attrs  = qw(dn);
-        $ldap_msg = PerformSearch(
-            $ldap,
-            base   => $group,
-            filter => "(${group_attr}=" . escape_filter_value($group_val) . ")",
-            attrs  => \@attrs,
-            scope  => 'base'
-        ) or return 0;
+        $filter = Net::LDAP::Filter->new("(${group_attr}=" . escape_filter_value($group_val) . ")");
+        
+        $RT::Logger->debug( "LDAP Search === ",
+                            "Base:",
+                            $group,
+                            "== Scope:",
+                            $group_scope,
+                            "== Filter:", 
+                            $filter->as_string,
+                            "== Attrs:", 
+                            join(',',@attrs));
+        
+        $ldap_msg = $ldap->search(  base   => $group,
+                                    filter => $filter,
+                                    attrs  => \@attrs,
+                                    scope  => $group_scope);
+
+        # And the user isn't a member:
+        unless ($ldap_msg->code == LDAP_SUCCESS || 
+                $ldap_msg->code == LDAP_PARTIAL_RESULTS) {
+            $RT::Logger->critical(  "Search for", 
+                                    $filter->as_string, 
+                                    "failed:",
+                                    ldap_error_name($ldap_msg->code), 
+                                    $ldap_msg->code);
+
+            # Fail auth - jump to next external auth service
+            return 0;
+        }
 
         unless ($ldap_msg->count == 1) {
             $RT::Logger->debug(
