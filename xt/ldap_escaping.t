@@ -20,6 +20,7 @@ $ldap->bind();
 my $users_dn = "ou=users,dc=bestpractical,dc=com";
 my $group_dn = "cn=test group,ou=groups,dc=bestpractical,dc=com";
 
+$ldap->add($users_dn);
 $ldap->add(
     "cn=Smith\\, John,$users_dn",
     attr => [

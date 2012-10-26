@@ -25,6 +25,7 @@ $ldap->bind();
 my $users_dn = "ou=users,dc=bestpractical,dc=com";
 my $group_dn = "cn=test group,ou=groups,dc=bestpractical,dc=com";
 
+$ldap->add($users_dn);
 for (1 .. 3) {
     my $uid = "testuser$_";
     my $entry    = {

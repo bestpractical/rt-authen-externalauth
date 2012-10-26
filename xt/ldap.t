@@ -17,7 +17,8 @@ ok( my $server = Net::LDAP::Server::Test->new( $ldap_port, auto_schema => 1 ),
 my $ldap = Net::LDAP->new("localhost:$ldap_port");
 $ldap->bind();
 my $username = "testuser";
-my $dn       = "uid=$username,dc=bestpractical,dc=com";
+my $base     = "dc=bestpractical,dc=com";
+my $dn       = "uid=$username,$base";
 my $entry    = {
     cn           => $username,
     mail         => "$username\@invalid.tld",
@@ -25,6 +26,7 @@ my $entry    = {
     objectClass  => 'User',
     userPassword => 'password',
 };
+$ldap->add( $base );
 $ldap->add( $dn, attr => [%$entry] );
 
 RT->Config->Set( ExternalAuthPriority        => ['My_LDAP'] );
@@ -37,7 +39,7 @@ RT->Config->Set(
         'My_LDAP' => {
             'type'            => 'ldap',
             'server'          => "127.0.0.1:$ldap_port",
-            'base'            => 'dc=bestpractical,dc=com',
+            'base'            => $base,
             'filter'          => '(objectClass=*)',
             'd_filter'        => '()',
             'tls'             => 0,
