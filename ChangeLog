@@ -1,3 +1,8 @@
+0.12	2012-10-26	Thomas Sibley
+	* Redirect correctly after login on RT 4.0.8, 3.8.15, and the 2012-10-25 security patches
+	* Added "group_scope" as a configurable option.
+	* Tests: Add to LDAP the base DN under which we search for users/groups
+
 0.11    2012-07-03  Alex Vandiver
 	* Obfuscate passwords in RT's System Configuration page
 	* Set an empty CurrentUser on failure, instead of removing it entirely

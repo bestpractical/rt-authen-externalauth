@@ -25,10 +25,12 @@ lib/RT/Authen/ExternalAuth/LDAP.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
+MANIFEST.SKIP
 META.yml
 README
 xt/ldap.t
 xt/ldap_escaping.t
 xt/ldap_group.t
 xt/ldap_privileged.t
+xt/obfuscate-password.t
 xt/sqlite.t
