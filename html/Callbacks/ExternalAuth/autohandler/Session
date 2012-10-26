@@ -7,6 +7,7 @@ if (   $m->request_comp->path eq '/NoAuth/Login.html'
     && $ARGS{next} )
 {
     my $next = delete $session{'NextPage'}->{ $ARGS{'next'} };
+       $next = $next->{'url'} if ref $next;
     RT::Interface::Web::Redirect( $next || RT->Config->Get('WebURL') );
 }
 </%init>
