@@ -364,6 +364,7 @@ sub UpdateUserInfo {
     my $msg             = "User NOT updated";
 
     my $user_disabled 	= RT::Authen::ExternalAuth::UserDisabled($username);
+    my $user_privileged	= RT::Authen::ExternalAuth::UserPrivileged($username);
 
     my $UserObj = RT::User->new($RT::SystemUser);
     $UserObj->Load($username);        
@@ -404,6 +405,10 @@ sub UpdateUserInfo {
                         "per External Service",
                         "($val, $message)\n");
     }
+
+    #First off, if the user is privileged, set that.
+    $RT::Logger->info("User ($username) ".$user_privileged?'has':'does not have'." privileges according to External Service ");
+    $UserObj->SetPrivileged($user_privileged);
 
     # Update their info from external service using the username as the lookup key
     # CanonicalizeUserInfo will work out for itself which service to use
@@ -556,6 +561,69 @@ sub UserDisabled {
     }
     return $user_disabled;
 }
+sub UserPrivileged {
+    
+    my $username = shift;
+    my $user_privileged = 0;
+    
+    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
+
+    # For each named service in the list
+    # Check to see if the user is found in the external service
+    # If not found, jump to next service
+    # If found, check to see if user is considered privileged by the service
+    # Then update the user's info in RT and return
+    foreach my $service (@info_services) {
+        
+        # Get the external config for this service as a hashref        
+        my $config = $RT::ExternalSettings->{$service};
+        
+        # If the config doesn't exist, don't bother doing anything, skip to next in list.
+        unless(defined($config)) {
+            $RT::Logger->debug("You haven't defined a configuration for the service named \"",
+                                $service,
+                                "\" so I'm not going to try to get user information from it. Skipping...");
+            next;
+        }
+        
+        # If it's a DBI config:
+        if ($config->{'type'} eq 'db') {
+            
+            unless(RT::Authen::ExternalAuth::DBI::UserExists($username,$service)) {
+                $RT::Logger->debug("User (",
+                                    $username,
+                                    ") doesn't exist in service (",
+                                    $service,
+                                    ") - Cannot update information - Skipping...");
+                next;
+            }
+            $user_privileged = RT::Authen::ExternalAuth::DBI::UserPrivileged($username,$service);
+            
+        } elsif ($config->{'type'} eq 'ldap') {
+            
+            unless(RT::Authen::ExternalAuth::LDAP::UserExists($username,$service)) {
+                $RT::Logger->debug("User (",
+                                    $username,
+                                    ") doesn't exist in service (",
+                                    $service,
+                                    ") - Cannot update information - Skipping...");
+                next;
+            }
+            $user_privileged = RT::Authen::ExternalAuth::LDAP::UserPrivileged($username,$service);
+                    
+        } elsif ($config->{'type'} eq 'cookie') {
+            RT::Logger->error("You cannot use SSO Cookies as an information service.");
+            next;
+        } else {
+            # The type of external service doesn't currently have any methods associated with it. Or it's a typo.
+            RT::Logger->error("Invalid type specification for config %config->{'name'}");
+            # Drop out to next service in list
+            next;
+        }
+    
+    }
+    return $user_privileged;
+}
 
 sub CanonicalizeUserInfo {
     
@@ -618,7 +686,7 @@ sub CanonicalizeUserInfo {
             my $attr_map = $config->{'attr_map'};
             while (($attr_key, $attr_value) = each %$attr_map) {
                 $valid = 1 if ($key eq $attr_value);
-            }
+           }
             unless ($valid){
                 $RT::Logger->debug( "This key (",
                                     $key,

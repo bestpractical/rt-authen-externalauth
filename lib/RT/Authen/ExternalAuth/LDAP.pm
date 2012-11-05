@@ -364,6 +364,165 @@ sub UserExists {
     return 1;
 }
 
+sub UserPrivileged {
+    #Shamelessly copied from GetAuth. Note that the level of checks that this does essentially re-validates
+    #the user's login. I'm sure some of this could be cut out, but since I didn't know a slick way to get
+    #the user's DN without doing the ldap search I just left it in.
+
+
+    my ($username,$service) = @_;
+
+    my $config = $RT::ExternalSettings->{$service};
+    $RT::Logger->debug( "Trying external auth service:",$service);
+
+    my $base            = $config->{'base'};
+    my $filter          = $config->{'filter'};
+    my $priv_group           = $config->{'priv_group'};
+    my $priv_group_attr      = $config->{'priv_group_attr'};
+    my $priv_group_attr_val  = $config->{'priv_group_attr_value'} || 'dn';
+    my $priv_group_scope     = $config->{'priv_group_scope'} || 'base';
+    my $attr_map        = $config->{'attr_map'};
+    my @attrs           = ('dn');
+
+    unless ($priv_group) {
+        # If we don't know how to check for privileged users, consider them all nonprivileged.
+        $RT::Logger->debug("No priv_group specified for this LDAP service (",
+                            $service,
+                            "), so considering all users nonprivileged");
+        return 0;
+    }
+
+
+
+    # Make sure we fetch the user attribute we'll need for the group check
+    push @attrs, $priv_group_attr_val
+        unless lc $priv_group_attr_val eq 'dn';
+
+    # Empty parentheses as filters cause Net::LDAP to barf.
+    # We take care of this by using Net::LDAP::Filter, but
+    # there's no harm in fixing this right now.
+    if ($filter eq "()") { undef($filter) };
+
+    # Now let's get connected
+    my $ldap = _GetBoundLdapObj($config);
+    return 0 unless ($ldap);
+
+    $filter = Net::LDAP::Filter->new(   '(&(' . 
+                                        $attr_map->{'Name'} . 
+                                        '=' . 
+                                        escape_filter_value($username) . 
+                                        ')' . 
+                                        $filter . 
+                                        ')'
+                                    );
+
+    $RT::Logger->debug( "LDAP Search === ",
+                        "Base:",
+                        $base,
+                        "== Filter:", 
+                        $filter->as_string,
+                        "== Attrs:", 
+                        join(',',@attrs));
+
+    my $ldap_msg = $ldap->search(   base   => $base,
+                                    filter => $filter,
+                                    attrs  => \@attrs);
+
+    unless ($ldap_msg->code == LDAP_SUCCESS || $ldap_msg->code == LDAP_PARTIAL_RESULTS) {
+        $RT::Logger->debug( "search for", 
+                            $filter->as_string, 
+                            "failed:", 
+                            ldap_error_name($ldap_msg->code), 
+                            $ldap_msg->code);
+        # Didn't even get a partial result - Just guess they're not privileged.
+        return 0;
+    }
+
+    unless ($ldap_msg->count == 1) {
+        $RT::Logger->info(  $service,
+                            "Privilege check failed:", 
+                            $username,
+                            "User not found or more than one user found");
+        # We got no user, or too many users.. Just guess they're not privileged.
+        return 0;
+    }
+
+    my $ldap_entry = $ldap_msg->first_entry;
+    my $ldap_dn    = $ldap_entry->dn;
+
+    $RT::Logger->debug( "Found LDAP DN:", 
+                        $ldap_dn);
+
+    if ($priv_group) {
+        my $priv_group_val = lc $priv_group_attr_val eq 'dn'
+                            ? $ldap_dn
+                            : $ldap_entry->get_value($priv_group_attr_val);
+
+        # Fallback to the DN if the user record doesn't have a value
+        unless (defined $priv_group_val) {
+            $priv_group_val = $ldap_dn;
+            $RT::Logger->debug("Attribute '$priv_group_attr_val' has no value; falling back to '$priv_group_val'");
+        }
+
+        # We only need the dn for the actual group since all we care about is existence
+        @attrs  = qw(dn);
+        $filter = Net::LDAP::Filter->new("(${priv_group_attr}=" . escape_filter_value($priv_group_val) . ")");
+        
+        $RT::Logger->debug( "LDAP Search === ",
+                            "Base:",
+                            $priv_group,
+                            "== Scope:",
+                            $priv_group_scope,
+                            "== Filter:", 
+                            $filter->as_string,
+                            "== Attrs:", 
+                            join(',',@attrs));
+        
+        $ldap_msg = $ldap->search(  base   => $priv_group,
+                                    filter => $filter,
+                                    attrs  => \@attrs,
+                                    scope  => $priv_group_scope);
+
+        # And the user isn't a member:
+        unless ($ldap_msg->code == LDAP_SUCCESS || 
+                $ldap_msg->code == LDAP_PARTIAL_RESULTS) {
+            $RT::Logger->critical(  "Search for", 
+                                    $filter->as_string, 
+                                    "failed:",
+                                    ldap_error_name($ldap_msg->code), 
+                                    $ldap_msg->code);
+
+            # LDAP failed - Just guess they're not privileged.
+            return 0;
+        }
+
+        unless ($ldap_msg->count == 1) {
+            $RT::Logger->debug(
+                "LDAP group membership check returned",
+                $ldap_msg->count, "results"
+            );
+            $RT::Logger->info(  $service,
+                                "Privilege check failed:", 
+                                $username);
+                                
+            # User not privileged.
+            return 0;
+        }
+    }
+    
+    # Any other checks you want to add? Add them here.
+
+    # If we've survived to this point, we're good.
+    $RT::Logger->info(  (caller(0))[3], 
+                        "External Privilege Check OK (",
+                        $service,
+                        "):", 
+                        $username);
+    return 1;
+
+
+}
+
 sub UserDisabled {
 
     my ($username,$service) = @_;

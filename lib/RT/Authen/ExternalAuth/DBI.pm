@@ -323,6 +323,86 @@ sub UserDisabled {
     $RT::Logger->crit("It is seriously not possible to run this code.. what the hell did you do?!");
     return 0;
 }
+sub UserPrivileged {
+
+    my ($username,$service) = @_;
+    
+    # FIRST, check that the user exists in the DBI service
+    unless(UserExists($username,$service)) {
+        $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not privileged for the purposes of privilege checking");
+        return 0;
+    }
+    
+    # Get the necessary config info
+    my $config              = $RT::ExternalSettings->{$service};
+    my $table    	        = $config->{'table'};
+    my $u_field	            = $config->{'u_field'};
+    my $privileged_field       = $config->{'priv_field'};
+    my $privileged_values_list = $config->{'priv_values'};
+
+    unless ($privileged_field) {
+        # If we don't know how to check for privileged users, consider them all unprivileged.
+        $RT::Logger->debug("No priv_field specified for this DBI service (",
+                            $service,
+                            "), so considering all users unprivileged");
+        return 0;
+    } 
+    
+    my $query = "SELECT $u_field,$privileged_field FROM $table WHERE $u_field=?";
+    my @bind_params = ($username);
+
+    # Uncomment this to do a basic trace on DBI information and log it
+    # DBI->trace(1,'/tmp/dbi.log');
+    
+    # Get DBI Object, do the query, disconnect
+    my $dbh = _GetBoundDBIObj($config);
+    my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
+    $dbh->disconnect();
+
+    my $num_of_results = scalar keys %$results_hashref;
+        
+    if ($num_of_results > 1) { 
+        # If more than one result returned, die because we the username field should be unique!
+        $RT::Logger->debug( "Privilege Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "More than one user with that username! - Assuming not privileged");
+        # Drop out to next service for an info check
+        return 0;
+    } elsif ($num_of_results < 1) { 
+        # If 0 or negative integer, no user found or major failure
+        $RT::Logger->debug( "Privilege Check Failed :: (",
+                            $service,
+                            ")",
+                            $username,
+                            "User not found - Assuming not privileged");   
+        # Drop out to next service for an info check
+        return 0;             
+    } else { 
+        # otherwise all should be well
+        
+        # $user_db_privileged_value = The value for "disabled" returned from the DB
+        my $user_db_privileged_value = $results_hashref->{$username}->{$privileged_field};
+        
+        # For each of the values in the (list of values that we consider to mean the user is privileged)..
+        foreach my $priv_value (@{$privileged_values_list}){
+            $RT::Logger->debug( "DB Privilege Check:", 
+                                "User's Val is $user_db_privileged_value,",
+                                "Checking against: $priv_value");
+            
+            # If the value from the DB matches a value from the list, the user is privileged.
+            if ($user_db_privileged_value eq $priv_value) {
+                return 1;
+            }
+        }
+        
+        # If we've not returned yet, the user can't be privileged
+        return 0;
+    }
+    $RT::Logger->crit("It is seriously not possible to run this code.. what the hell did you do?!");
+    return 0;
+}
 
 sub GetCookieAuth {
 

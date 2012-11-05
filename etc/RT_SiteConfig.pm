@@ -79,6 +79,17 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         # Otherwise, they will be considered enabled.
                                                         'd_field'                   =>  'disabled',
                                                         'd_values'                  =>  ['0'],
+                                                        # The field and values in the table that determines if a user should
+                                                        # be privileged. For example, if the field is 'staff_member' and the values
+                                                        # are ['0','1','2','privileged'] then the user will be privileged if their
+                                                        # user_status is set to '0','1','2' or the string 'privileged'.
+                                                        # Otherwise, they will be considered unprivileged.
+							#
+							# Uncomment with care! The wrong value for these options could
+                                                        # grant unauthorized people privileges in your RT!
+                                                        #'priv_field'                   =>  'PRIVILEGED_STATUS_COLUMN_NAME',
+                                                        #'priv_values'                  =>  ['1'],
+
                                                         ## RT ATTRIBUTE MATCHING SECTION
                                                         # The list of RT attributes that uniquely identify a user
                                                         'attr_match_list'           =>  [   'Gecos',
@@ -119,7 +130,8 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         # The filter that will only match disabled users
                                                         'd_filter'                  =>  '(FILTER_STRING)',
                                                         # A catch-none example d_filter: '(objectClass=FooBarBaz)'
-                                                        #
+                                                        # A filter which will match users who are disabled in Microsoft AD:
+                                                        #             '(userAccountControl:1.2.840.113556.1.4.803:=2)'
                                                         # Should we try to use TLS to encrypt connections?
                                                         'tls'                       =>  0,
                                                         # SSL Version to provide to Net::SSLeay *if* using SSL
@@ -135,6 +147,26 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         'group_attr'                =>  'GROUP_ATTR',
                                                         # What is the attribute of the user entry that should be matched against group_attr above? (Optional; defaults to 'dn')
                                                         'group_attr_value'          =>  'GROUP_ATTR_VALUE',
+
+                                                        # We can determine user privilege via External Auth too.
+                                                        #
+                                                        # Uncomment with care! The wrong value for these options could
+                                                        # grant unauthorized people privileges in your RT!
+                                                        #
+                                                        #'priv_group'     =>     'PRIVILEGED GROUP CANONICAL NAME',
+                                                        
+                                                        # What is the scope of the group search? (base, one, sub)
+                                                        # Optional; defaults to 'base', which is good enough for most cases. 'sub' is appropriate when you have nested groups
+                                                        #'priv_group_scope'       =>     'base',
+
+                                                        # What is the attribute for the group object that determines membership?
+                                                        # For recursive searches in Microsoft AD, use this:
+                                                        #              'member:1.2.840.113556.1.4.1941:'
+                                                        #'priv_group_attr'       =>      'GROUP ATTR',
+                                                        
+                                                        # What is the attribute of the user entry that should be matched against group_attr above? (Optional; defaults to 'dn')
+                                                        #'priv_group_attr_value'        =>      'GROUP_ATTR_VALUE',
+
                                                         ## RT ATTRIBUTE MATCHING SECTION
                                                         # The list of RT attributes that uniquely identify a user
 							# This example shows what you *can* specify.. I recommend reducing this
