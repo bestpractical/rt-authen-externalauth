@@ -1,3 +1,6 @@
+0.13	2013-01-31	Thomas Sibley
+	* Cut down on code by using the core RT::Record->Update method
+
 0.12	2012-10-26	Thomas Sibley
 	* Redirect correctly after login on RT 4.0.8, 3.8.15, and the 2012-10-25 security patches
 	* Added "group_scope" as a configurable option.

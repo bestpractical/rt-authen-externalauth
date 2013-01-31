@@ -58,7 +58,7 @@
 #!end included /opt/perlbrew/perls/perl-5.14.1/lib/5.14.1/ExtUtils/MANIFEST.SKIP
 
 
-^xt/tmp/ports
+^xt/tmp/
 \.tar\.gz$
 \.sw[op]$
 ^\.tags
