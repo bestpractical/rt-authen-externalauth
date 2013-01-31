@@ -413,23 +413,12 @@ sub UpdateUserInfo {
 
     # For each piece of information returned by CanonicalizeUserInfo,
     # run the Set method for that piece of info to change it for the user
-    foreach my $key (sort(keys(%args))) {
-        next unless $args{$key};
-        my $method = "Set$key";
-        # We do this on the UserObj from above, not self so that there 
-        # are no permission restrictions on setting information
-        my ($method_success,$method_msg) = $UserObj->$method($args{$key});
-        
-        # If your user information is not getting updated, 
-        # uncomment the following logging statements
-        if ($method_success) {
-            # At DEBUG level, log that method succeeded
-            # $RT::Logger->debug((caller(0))[3],"$method Succeeded. $method_msg");
-        } else {
-            # At DEBUG level, log that method failed
-            # $RT::Logger->debug((caller(0))[3],"$method Failed. $method_msg");
-        }
-    }
+    my @results = $UserObj->Update(
+        ARGSRef         => \%args,
+        AttributesRef   => [keys %args],
+    );
+    $RT::Logger->debug("UPDATED user $username: $_")
+        for @results;
 
     # Confirm update success
     $updated = 1;
