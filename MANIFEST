@@ -30,10 +30,11 @@ MANIFEST			This list of files
 META.yml
 README
 xt/ldap/basics.t
-xt/ldap_escaping.t
-xt/ldap_group.t
 xt/ldap/late-sync.t
 xt/ldap/multiple-emails.t
 xt/ldap/privileged.t
 xt/ldap/user-create.t
+xt/ldap_escaping.t
+xt/ldap_group.t
+xt/obfuscate-password.t
 xt/sqlite.t
