@@ -98,6 +98,10 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         # The server hosting the service
                                                         'server'                    =>  'server.domain.tld',
                                                         ## SERVICE-SPECIFIC SECTION
+                                                        #
+                                                        # If you need to use LDAPS (SSL rather than TLS),
+                                                        # set use_ldaps to 1;
+                                                        'use_ldaps'             => 0,
                                                         # If you can bind to your LDAP server anonymously you should 
                                                         # remove the user and pass config lines, otherwise specify them here:
                                                         # 

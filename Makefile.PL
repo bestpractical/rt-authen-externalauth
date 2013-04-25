@@ -11,6 +11,7 @@ readme_from;
 feature 'SSL LDAP Connections' =>
     -default => 0,
     recommends('Net::SSLeay' => 0),
+    recommends('Net::LDAPS' => 0),
     ;
 
 feature 'External LDAP Sources' => 
