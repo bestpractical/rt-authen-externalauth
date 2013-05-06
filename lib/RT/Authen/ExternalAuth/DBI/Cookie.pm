@@ -4,6 +4,10 @@ use CGI::Cookie;
 
 use strict;
 
+=head1 DESCRIPTION
+
+Provides the Cookie implementation for L<RT::Authen::ExternalAuth>.
+
 =head1 SYNOPSIS
 
 Set($ExternalSettings, {
@@ -26,26 +30,26 @@ Set($ExternalSettings, {
 
 =head1 CONFIGURATION
 
-Generic options described in F<etc/RT_SiteConfig.pm> file shipped with
-tarball.
+Cookie-specific options are described here. Shared options
+are described in the F<etc/RT_SiteConfig.pm> file included
+in this distribution.
 
-Above in L</SYNOPSIS> you can find example that lists all options.
-
-The following options are supported:
+The example in the L</SYNOPSIS> lists all available options
+and they are described below.
 
 =over 4
 
 =item name
 
-The name of the cookie to be used
+The name of the cookie to be used.
 
 =item u_table
 
-The users table
+The users table.
 
 =item u_field
 
-The username field in the users table
+The username field in the users table.
 
 =item u_match_key
 
@@ -54,11 +58,11 @@ and also exists in the cookies table. See c_match_key below.
 
 =item c_table
 
-The cookies table
+The cookies table.
 
 =item c_field
 
-The field that stores cookie values
+The field that stores cookie values.
 
 =item c_match_key
 

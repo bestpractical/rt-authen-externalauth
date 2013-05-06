@@ -8,6 +8,10 @@ use strict;
 
 require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
+=head1 DESCRIPTION
+
+Provides the LDAP implementation for L<RT::Authen::ExternalAuth>.
+
 =head1 SYNOPSIS
 
     Set($ExternalSettings, {
@@ -17,7 +21,7 @@ require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
             'server'                    =>  'server.domain.tld',
             'user'                      =>  'rt_ldap_username',
-            'pass'                    =>  'rt_ldap_password',
+            'pass'                      =>  'rt_ldap_password',
 
             'base'                      =>  'ou=Organisational Unit,dc=domain,dc=TLD',
             'filter'                    =>  '(FILTER_STRING)',
@@ -57,18 +61,20 @@ require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
 =head1 CONFIGURATION
 
-Generic options described in F<etc/RT_SiteConfig.pm> file shipped with
-tarball.
+LDAP-specific options are described here. Shared options
+are described in the F<etc/RT_SiteConfig.pm> file included
+in this distribution.
 
-Above in L</SYNOPSIS> you can find example that lists all options.
-
-The following options are supported:
+The example in the L</SYNOPSIS> lists all available options
+and they are described below. Note that many of these values
+are specific to LDAP, so you should consult your LDAP
+documentation for details.
 
 =over 4
 
 =item server
 
-The server hosting the service
+The server hosting the LDAP or AD service.
 
 =item user, pass
 
@@ -80,12 +86,12 @@ set these options.
 
 =item base
 
-The LDAP search base
+The LDAP search base.
 
-=item filter, d_filter
+=item filter
 
-The filter to use to match RT-Users. You B<MUST> specify it
-and it B<MUST> be a valid LDAP filter encased in parentheses.
+The filter to use to match RT users. You B<must> specify it
+and it B<must> be a valid LDAP filter encased in parentheses.
 
 For example:
 
@@ -93,8 +99,8 @@ For example:
 
 =item d_filter
 
-The filter that will only match disabled users. You B<MUST>
-specify it and it B<MUST> be a valid LDAP filter encased
+The filter that will only match disabled users. You B<must>
+specify it and it B<must> be a valid LDAP filter encased
 in parentheses.
 
 To catch none use
@@ -126,11 +132,13 @@ Should we try to use TLS to encrypt connections?
 
 =item ssl_version
 
-SSL Version to provide to Net::SSLeay *if* using SSL
+SSL Version to provide to Net::SSLeay *if* using SSL.
 
 =item net_ldap_args
 
 What other args should be passed to Net::LDAP->new($host,@args)?
+
+=back
 
 =cut
 

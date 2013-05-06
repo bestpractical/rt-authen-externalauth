@@ -5,6 +5,10 @@ use RT::Authen::ExternalAuth::DBI::Cookie;
 
 use strict;
 
+=head1 DESCRIPTION
+
+Provides the database implementation for L<RT::Authen::ExternalAuth>.
+
 =head1 SYNOPSIS
 
     Set($ExternalSettings, {
@@ -45,42 +49,43 @@ use strict;
 
 =head1 CONFIGURATION
 
-Generic options described in F<etc/RT_SiteConfig.pm> file shipped with
-tarball.
+DBI-specific options are described here. Shared options
+are described in the F<etc/RT_SiteConfig.pm> file included
+in this distribution.
 
-Above in L</SYNOPSIS> you can find example that lists all options.
-
-The following options are supported:
+The example in the L</SYNOPSIS> lists all available options
+and they are described below. See the L<DBI> module for details
+on debugging connection issues.
 
 =over 4
 
 =item dbi_driver
 
-The name of the Perl DBI driver to use (e.g. mysql, Pg, SQLite)
+The name of the Perl DBI driver to use (e.g. mysql, Pg, SQLite).
 
 =item server
 
-The server hosting the database
+The server hosting the database.
 
 =item port
 
-The port to use to connect with (e.g. 3306)
+The port to use to connect on (e.g. 3306).
 
 =item user
 
-The user to connect to the database server as
+The database user for the connection.
 
 =item pass
 
-The password to use to connect with
+The password for the database user.
 
 =item database
 
-The database name
+The database name.
 
 =item table
 
-The database table
+The database table containing the user information to check against.
 
 =item u_field
 
@@ -92,17 +97,17 @@ The field in the table that holds passwords
 
 =item p_enc_pkg, p_enc_sub
 
-The Perl package & subroutine used to encrypt passwords
-e.g. if the passwords are stored using the MySQL v3.23 "PASSWORD"
-function, then you will need Crypt::MySQL::password, but for the
-MySQL4+ password function you will need Crypt::MySQL::password41
-Alternatively, you could use Digest::MD5::md5_hex or any other
-encryption subroutine you can load in your perl installation.
+The Perl package and subroutine used to encrypt passwords from the
+database. For example, if the passwords are stored using the MySQL
+v3.23 "PASSWORD" function, then you will need the L<Crypt::MySQL>
+C<password> function, but for the MySQL4+ password you will need
+L<Crypt::MySQL>'s C<password41>. Alternatively, you could use
+L<Digest::MD5> C<md5_hex> or any other encryption subroutine you can
+load in your Perl installation.
 
 =item p_salt
 
-If p_enc_sub takes a salt as a second parameter then set it to add
-your salt
+If p_enc_sub takes a salt as a second parameter then set it here.
 
 =item d_field, d_values
 

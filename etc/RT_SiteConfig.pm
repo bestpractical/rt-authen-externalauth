@@ -1,5 +1,11 @@
 =head1 External Authentication Configuration
 
+L<RT::Authen::ExternalAuth> provides a lot of flexibility
+with many configuration options. This file describes these
+configuration options and is itself a sample configuration
+suitable for dropping into your C<etc/RT_SiteConfig.pm>
+file and modifying.
+
 =over 4
 
 =item C<$ExternalAuthPriority>
@@ -9,29 +15,36 @@ should be used to authenticate users. User is authenticated
 if successfully confirmed by any service - no more services
 are checked.
 
+You should remove services you don't use. For example,
+if you're only using My_LDAP, remove My_MySQL and My_SSO_Cookie.
+
 =cut
 
-Set($ExternalAuthPriority,  [   'My_LDAP',
-                                'My_MySQL',
-                                'My_SSO_Cookie'
+Set($ExternalAuthPriority,  [ 'My_LDAP',
+                              'My_MySQL',
+                              'My_SSO_Cookie'
                             ]
 );
 
 =item C<$ExternalInfoPriority>
 
-The order in which the services defined in ExternalSettings
+When multiple auth services are available, this value eefines
+the order in which the services defined in ExternalSettings
 should be used to get information about users. This includes
 RealName, Tel numbers etc, but also whether or not the user
 should be considered disabled.
 
-Once user record is found, no more services are checked.
+Once a user record is found, no more services are checked.
 
 You CANNOT use a SSO cookie to retrieve information.
 
+You should remove services you don't use, but you must define
+at least one service.
+
 =cut
 
-Set($ExternalInfoPriority,  [   'My_MySQL',
-                                'My_LDAP'
+Set($ExternalInfoPriority,  [ 'My_LDAP',
+                              'My_MySQL',
                             ]
 );
 
@@ -49,7 +62,9 @@ Set($ExternalServiceUsesSSLorTLS,    0);
 
 If this is set to 1, then users should be autocreated by RT
 as internal users if they fail to authenticate from an
-external service.
+external service. This is useful if you have users outside
+your organization who might interface with RT, perhaps by sending
+email to a support email address.
 
 =cut
 
@@ -62,8 +77,9 @@ Note that you may have as many external services as you wish. They will
 be checked in the order specified in $ExternalAuthPriority and
 $ExternalInfoPriority directives above.
 
-Option is a hash with (name of external source, hash reference with
-description) pairs, for example:
+The outer structure is a key with the authentication option (name of external
+source). The value is a hash reference with configuration keys and values,
+for example:
 
     Set($ExternalSettings,
         MyLDAP => {
@@ -77,53 +93,56 @@ description) pairs, for example:
         ... other sources ...
     );
 
-As showed above each description should have 'type' information,
-the following types are supported:
+As shown above, each description should have 'type' defined.
+The following types are supported:
 
 =over 4
 
 =item ldap
 
-Auth against and information sync with LDAP servers.
+Authenticate against and sync information with LDAP servers.
 See L<RT::Authen::ExternalAuth::LDAP> for details.
 
 =item db
 
-Auth against and information sync with external RDBMS supported
-by perl's L<DBI> interface. See L<RT::Authen::ExternalAuth::DBI>
+Authenticate against and sync information with external RDBMS,
+supported by Perl's L<DBI> interface. See L<RT::Authen::ExternalAuth::DBI>
 for details.
 
 =item cookie
 
-Auth by a cookie. See L<RT::Authen::ExternalAuth::DBI::Cookie>
+Authenticate by cookie. See L<RT::Authen::ExternalAuth::DBI::Cookie>
 for details.
 
 =back
 
-See documentation of referenced modules for information on config
-options.
-
-Generic options for services providing users' information:
+See the modules noted above for configuration options specific to each type.
+The following apply to all types.
 
 =over 4
 
 =item attr_match_list
 
-The list of RT attributes that uniquely identify a user. It's
-recommended to use 'Name' and 'EmailAddress' to save
-encountering problems later. Example:
+The list of RT attributes that uniquely identify a user. These values
+are used, in order, to find users in the selected authentication
+source. Each value specified here must have a mapping in the
+L</"attr_map"> section below. You can remove values you don't
+expect to match, but it's recommended to use 'Name' and 'EmailAddress'
+at minimum. For example:
 
     'attr_match_list' => [
         'Name',
         'EmailAddress',
         'RealName',
-        'WorkPhone',
     ],
 
 =item attr_map
 
 Mapping of RT attributes on to attributes in the external source.
-Example:
+Valid keys are attributes of an
+L<RT::User|http://bestpractical.com/rt/docs/latest/RT/User.html>.
+The values are attributes from your authentication source.
+For example, an LDAP mapping might look like:
 
     'attr_map' => {
         'Name'         => 'sAMAccountName',
@@ -141,11 +160,17 @@ external attributes, for example:
         ...
     },
 
-Note that only one value storred in RT. However, search goes by
-all external attributes if such RT field list in 'attr_match_list'.
-On create or update entered value is used as long as it's valid.
-If user didn't enter value then value stored in the first external
-attribute is used. Config example:
+Note that only one value is stored in RT, so this doesn't enable RT
+users to have multiple email addresses defined. However, the search
+will use all of the attributes to try to match a user if the field is
+defined in the C<attr_match_list>.
+
+On create or update, the original value input by the user, from an email
+or login attempt, is used as long as it's valid. If user didn't enter a
+value for that attribute, then the value retrieved from the first external
+attribute is used.
+
+For example, for the following configuration:
 
     attr_match_list => ['Name', 'EmailAddress'],
     attr_map => {
@@ -153,6 +178,27 @@ attribute is used. Config example:
         EmailAddress => ['mail', 'alias'],
         ...
     },
+
+If a new user sent an email to RT from an email alias, the search
+would match on the alias and that alias would be set as the user's
+EmailAddress in RT when the new account is created.
+
+However, if a user with an existing RT account, with EmailAddress set
+to the C<mail> address, sent mail from C<alias>, it would
+still match. However, the user's EmailAddress in RT would
+remain the primary C<mail> address.
+
+This feature is useful for LDAP configurations where users have
+a primary institutional email address, but might also use aliases from
+subdomains or other email services. This prevents RT from creating
+multiple accounts for the same person.
+
+If you want the RT user accounts to always have the primary C<mail>
+address for EmailAddress, you likely want to run
+L<RT::Extension::LDAPImport> to make sure the user accounts are
+created with the desired email address set.
+
+=back
 
 =back
 
@@ -206,8 +252,6 @@ Set($ExternalSettings, {
             'Name',
             'EmailAddress',
             'RealName',
-            'WorkPhone',
-            'Address2'
         ],
         'attr_map' => {
             'Name' => 'sAMAccountName',
@@ -237,9 +281,5 @@ Set($ExternalSettings, {
         'db_service_name'           =>  'My_MySQL'
     },
 } );
-
-=back
-
-=cut
 
 1;
