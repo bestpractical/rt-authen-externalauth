@@ -181,6 +181,19 @@ Set($ExternalSettings,      {   # AN EXAMPLE DB SERVICE
                                                         'c_match_key'               =>  'loginCookieUserID',
                                                         # The DB service in this configuration to use to lookup the cookie information
                                                         'db_service_name'           =>  'My_MySQL'
+                                                    },
+                                # An example SSO CAS service
+                                'My_CAS'  => {   # The type of service
+                                                        'type'                      =>  'cas',
+                                                        casUrl                    =>  'https://cas.myserver', #required
+                                                        #CAFile                    =>  '/etc/httpd/conf/ssl.crt/ca-bundle.crt',
+                                                        #CAPath => '/etc/httpd/conf/ssl.crt/',
+                                                        #loginPath => '/login',
+                                                        #logoutPath => '/logout',
+                                                        #serviceValidatePath => '/serviceValidate',
+                                                        #proxyPath => '/proxy',
+                                                        #proxyValidatePath => '/proxyValidate',
+                                                        #SSL_version => 'unset'
                                                     }
                                 }
 );

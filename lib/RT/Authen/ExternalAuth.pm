@@ -133,6 +133,7 @@ root.
 
 use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
+use RT::Authen::ExternalAuth::CAS;
 
 use strict;
 
@@ -151,7 +152,7 @@ $RT::Config::META{ExternalSettings}->{Obfuscate} = sub {
 };
 
 sub DoAuth {
-    my ($session,$given_user,$given_pass) = @_;
+    my ($session,$given_user,$given_pass,$ticket) = @_;
 
     unless(defined($RT::ExternalAuthPriority)) {
         return (0, "ExternalAuthPriority not defined, please check your configuration file.");
@@ -196,6 +197,8 @@ sub DoAuth {
         if ($config->{'type'} eq 'cookie') {    
             # Currently, Cookie authentication is our only SSO method
             $username = RT::Authen::ExternalAuth::DBI::GetCookieAuth($config);
+        } elsif ($config->{'type'} eq 'cas') {    
+            $username = RT::Authen::ExternalAuth::CAS::GetCasAuth($config, $ticket);
         }
         #############################################################
         
