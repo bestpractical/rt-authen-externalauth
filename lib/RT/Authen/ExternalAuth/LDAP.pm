@@ -99,13 +99,8 @@ For example:
 
 =item d_filter
 
-The filter that will only match disabled users. You B<must>
-specify it and it B<must> be a valid LDAP filter encased
-in parentheses.
-
-To catch none use
-
-    d_filter => '(objectClass=FooBarBaz)'
+The filter that will only match disabled users. Optional.
+B<Must> be a valid LDAP filter encased in parentheses.
 
 =item group
 
