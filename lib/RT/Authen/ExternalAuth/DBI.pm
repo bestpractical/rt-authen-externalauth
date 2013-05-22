@@ -5,6 +5,122 @@ use RT::Authen::ExternalAuth::DBI::Cookie;
 
 use strict;
 
+=head1 DESCRIPTION
+
+Provides the database implementation for L<RT::Authen::ExternalAuth>.
+
+=head1 SYNOPSIS
+
+    Set($ExternalSettings, {
+        'My_MySQL'   =>  {
+            'type'                      =>  'db',
+
+            'dbi_driver'                =>  'DBI_DRIVER',
+
+            'server'                    =>  'server.domain.tld',
+            'port'                      =>  'DB_PORT',
+            'user'                      =>  'DB_USER',
+            'pass'                      =>  'DB_PASS',
+
+            'database'                  =>  'DB_NAME',
+            'table'                     =>  'USERS_TABLE',
+            'u_field'                   =>  'username',
+            'p_field'                   =>  'password',
+
+            'p_enc_pkg'                 =>  'Crypt::MySQL',
+            'p_enc_sub'                 =>  'password',
+            'p_salt'                    =>  'SALT',
+
+            'd_field'                   =>  'disabled',
+            'd_values'                  =>  ['0'],
+
+            'attr_match_list' =>  [
+                'Gecos',
+                'Name',
+            ],
+            'attr_map' => {
+                'Name'           => 'username',
+                'EmailAddress'   => 'email',
+                'ExternalAuthId' => 'username',
+                'Gecos'          => 'userID',
+            },
+        },
+    } );
+
+=head1 CONFIGURATION
+
+DBI-specific options are described here. Shared options
+are described in the F<etc/RT_SiteConfig.pm> file included
+in this distribution.
+
+The example in the L</SYNOPSIS> lists all available options
+and they are described below. See the L<DBI> module for details
+on debugging connection issues.
+
+=over 4
+
+=item dbi_driver
+
+The name of the Perl DBI driver to use (e.g. mysql, Pg, SQLite).
+
+=item server
+
+The server hosting the database.
+
+=item port
+
+The port to use to connect on (e.g. 3306).
+
+=item user
+
+The database user for the connection.
+
+=item pass
+
+The password for the database user.
+
+=item database
+
+The database name.
+
+=item table
+
+The database table containing the user information to check against.
+
+=item u_field
+
+The field in the table that holds usernames
+
+=item p_field
+
+The field in the table that holds passwords
+
+=item p_enc_pkg, p_enc_sub
+
+The Perl package and subroutine used to encrypt passwords from the
+database. For example, if the passwords are stored using the MySQL
+v3.23 "PASSWORD" function, then you will need the L<Crypt::MySQL>
+C<password> function, but for the MySQL4+ password you will need
+L<Crypt::MySQL>'s C<password41>. Alternatively, you could use
+L<Digest::MD5> C<md5_hex> or any other encryption subroutine you can
+load in your Perl installation.
+
+=item p_salt
+
+If p_enc_sub takes a salt as a second parameter then set it here.
+
+=item d_field, d_values
+
+The field and values in the table that determines if a user should
+be disabled. For example, if the field is 'user_status' and the values
+are ['0','1','2','disabled'] then the user will be disabled if their
+user_status is set to '0','1','2' or the string 'disabled'.
+Otherwise, they will be considered enabled.
+
+=back
+
+=cut
+
 sub GetAuth {
 
     my ($service, $username, $password) = @_;
