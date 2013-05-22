@@ -39,7 +39,7 @@ diag "Login as tom";
     sessions_seen_is($m, 1);
 
     $m->get_ok("/NoAuth/Logout.html");
-    sessions_seen_is($m, 1);
+    sessions_seen_is($m, 2);
 }
 
 diag "Login as alex";
@@ -52,9 +52,10 @@ diag "Login as alex";
         },
     );
     $m->text_contains( 'Logout', 'logged in via form' );
-    sessions_seen_is($m, 2);
+    sessions_seen_is($m, 3);
 
     $m->get_ok("/NoAuth/Logout.html");
+    sessions_seen_is($m, 4);
 }
 
 undef $m;
