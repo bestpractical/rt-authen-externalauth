@@ -183,10 +183,9 @@ If a new user sent an email to RT from an email alias, the search
 would match on the alias and that alias would be set as the user's
 EmailAddress in RT when the new account is created.
 
-However, if a user with an existing RT account, with EmailAddress set
-to the C<mail> address, sent mail from C<alias>, it would
-still match. However, the user's EmailAddress in RT would
-remain the primary C<mail> address.
+However, if a user with an existing RT account with EmailAddress set to the
+C<mail> address, sent mail from C<alias>, it would still match. The user's
+EmailAddress in RT would remain the primary C<mail> address.
 
 This feature is useful for LDAP configurations where users have
 a primary institutional email address, but might also use aliases from
