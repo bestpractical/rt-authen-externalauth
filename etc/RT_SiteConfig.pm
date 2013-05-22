@@ -28,7 +28,7 @@ Set($ExternalAuthPriority,  [ 'My_LDAP',
 
 =item C<$ExternalInfoPriority>
 
-When multiple auth services are available, this value eefines
+When multiple auth services are available, this value defines
 the order in which the services defined in ExternalSettings
 should be used to get information about users. This includes
 RealName, Tel numbers etc, but also whether or not the user
