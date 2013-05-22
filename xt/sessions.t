@@ -12,6 +12,8 @@ RT->Config->Set("WebSessionClass" => "Apache::Session::File");
 {
     my %sessions;
     sub sessions_seen_is {
+        local $Test::Builder::Level = $Test::Builder::Level + 1;
+
         my ($agent, $expected, $msg) = @_;
         $msg ||= "$expected sessions seen";
 
