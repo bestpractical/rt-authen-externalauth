@@ -4,16 +4,16 @@ our $VERSION = '0.13';
 
 =head1 NAME
 
-  RT::Authen::ExternalAuth - RT Authentication using External Sources
+RT::Authen::ExternalAuth - RT Authentication using External Sources
 
 =head1 DESCRIPTION
 
-  A complete package for adding external authentication mechanisms
-  to RT. It currently supports LDAP via Net::LDAP and External Database
-  authentication for any database with an installed DBI driver.
+A complete package for adding external authentication mechanisms
+to RT. It currently supports LDAP via Net::LDAP and External Database
+authentication for any database with an installed DBI driver.
 
-  It also allows for authenticating cookie information against an
-  external database through the use of the RT-Authen-CookieAuth extension.
+It also allows for authenticating cookie information against an
+external database through the use of the RT-Authen-CookieAuth extension.
 
 =head1 UPGRADING
 
@@ -98,7 +98,7 @@ If you are using RT 3.8.x, you need to enable this
 module by adding RT::Authen::ExternalAuth to your
 @Plugins configuration:
 
-Set( @Plugins, qw(RT::Authen::ExternalAuth) );
+    Set( @Plugins, qw(RT::Authen::ExternalAuth) );
 
 If you already have a @Plugins line, add RT::Authen::ExternalAuth to the
 existing list.  Adding a second @Plugins line will cause interesting
