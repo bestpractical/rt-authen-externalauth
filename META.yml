@@ -1,5 +1,5 @@
 ---
-abstract: 'RT Authen-ExternalAuth Extension'
+abstract: 'RT Authentication using External Sources'
 author:
   - 'Mike Peachey'
   - 'Mike Peachey <zordrak@cpan.org>'
@@ -33,4 +33,4 @@ requires:
   Net::SSLeay: 0
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 0.13
+version: 0.14

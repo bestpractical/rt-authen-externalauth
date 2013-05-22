@@ -4,6 +4,9 @@
 	  3.8.17 and by the May 2013 security patches.  Changes here are purely
 	  for correctness/bulletproofing down the road.
 
+	* Moved much documentation from comments into POD; cleanups are still
+	  needed, but this is a good start.
+
 0.13	2013-01-31	Thomas Sibley
 	* Cut down on code by using the core RT::Record->Update method
 

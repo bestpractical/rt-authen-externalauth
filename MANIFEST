@@ -33,4 +33,5 @@ xt/ldap_escaping.t
 xt/ldap_group.t
 xt/ldap_privileged.t
 xt/obfuscate-password.t
+xt/sessions.t
 xt/sqlite.t
