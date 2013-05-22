@@ -344,6 +344,10 @@ sub DoAuth {
                                 $ENV{'REMOTE_ADDR'});
             # Do not delete the session. User stays logged in and
             # autohandler will not check the password again
+
+            my $cu = $session->{CurrentUser};
+            RT::Interface::Web::InstantiateNewSession();
+            $session->{CurrentUser} = $cu;
     } else {
             # Make SURE the session is purged to an empty user.
             $session->{'CurrentUser'} = RT::CurrentUser->new;
