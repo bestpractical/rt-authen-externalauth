@@ -1,3 +1,9 @@
+0.14	2013-05-22	Thomas Sibley
+	* Prevent potential session reuse when Apache::Session::File is RT's
+	  $WebSessionClass.  This is also resolved by RT versions 4.0.13 and
+	  3.8.17 and by the May 2013 security patches.  Changes here are purely
+	  for correctness/bulletproofing down the road.
+
 0.13	2013-01-31	Thomas Sibley
 	* Cut down on code by using the core RT::Record->Update method
 
