@@ -102,6 +102,10 @@ For example:
 The filter that will only match disabled users. Optional.
 B<Must> be a valid LDAP filter encased in parentheses.
 
+For example with Active Directory the following can be used:
+
+    d_filter => '(userAccountControl:1.2.840.113556.1.4.803:=2)'
+
 =item group
 
 Does authentication depend on group membership? What group name?
