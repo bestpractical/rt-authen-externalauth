@@ -1,3 +1,6 @@
+0.15	2013-05-22	Thomas Sibley
+	* Minor documentation updates to add NAME sections for MetaCPAN
+
 0.14	2013-05-22	Thomas Sibley
 	* Prevent potential session reuse when Apache::Session::File is RT's
 	  $WebSessionClass.  This is also resolved by RT versions 4.0.13 and
