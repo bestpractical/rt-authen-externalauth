@@ -4,6 +4,10 @@ use CGI::Cookie;
 
 use strict;
 
+=head1 NAME
+
+RT::Authen::ExternalAuth::DBI::Cookie - Database-backed, cookie SSO source for RT authentication
+
 =head1 DESCRIPTION
 
 Provides the Cookie implementation for L<RT::Authen::ExternalAuth>.

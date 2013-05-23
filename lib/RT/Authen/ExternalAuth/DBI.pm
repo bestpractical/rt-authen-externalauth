@@ -5,6 +5,10 @@ use RT::Authen::ExternalAuth::DBI::Cookie;
 
 use strict;
 
+=head1 NAME
+
+RT::Authen::ExternalAuth::DBI - External database source for RT authentication
+
 =head1 DESCRIPTION
 
 Provides the database implementation for L<RT::Authen::ExternalAuth>.

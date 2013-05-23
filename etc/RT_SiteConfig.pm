@@ -1,4 +1,8 @@
-=head1 External Authentication Configuration
+=head1 NAME
+
+External Authentication Configuration - Sample configs for L<RT::Authen::ExternalAuth>
+
+=head1 DESCRIPTION
 
 L<RT::Authen::ExternalAuth> provides a lot of flexibility
 with many configuration options. This file describes these

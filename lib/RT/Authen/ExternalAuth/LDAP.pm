@@ -8,6 +8,10 @@ use strict;
 
 require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
+=head1 NAME
+
+RT::Authen::ExternalAuth::LDAP - LDAP source for RT authentication
+
 =head1 DESCRIPTION
 
 Provides the LDAP implementation for L<RT::Authen::ExternalAuth>.
