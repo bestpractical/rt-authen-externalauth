@@ -1,3 +1,6 @@
+0.16	2013-06-27	Thomas Sibley
+	* Add new p_check option to DBI authentication module
+
 0.15	2013-05-22	Thomas Sibley
 	* Minor documentation updates to add NAME sections for MetaCPAN
 
