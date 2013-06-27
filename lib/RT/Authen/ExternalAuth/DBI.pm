@@ -31,6 +31,12 @@ Provides the database implementation for L<RT::Authen::ExternalAuth>.
             'u_field'                   =>  'username',
             'p_field'                   =>  'password',
 
+            # Example of custom hashed password check
+            #'p_check'                   =>  sub {
+            #    my ($hash_from_db, $password) = @_;
+            #    return $hash_from_db eq function($password);
+            #},
+
             'p_enc_pkg'                 =>  'Crypt::MySQL',
             'p_enc_sub'                 =>  'password',
             'p_salt'                    =>  'SALT',
@@ -99,6 +105,24 @@ The field in the table that holds usernames
 
 The field in the table that holds passwords
 
+=item p_check
+
+Optional.  An anonymous subroutine definition used to check the (presumably
+hashed) passed from the database with the password entered by the user logging
+in.  The subroutine should return true on success and false on failure.  The
+configuration options C<p_enc_pkg> and C<p_enc_sub> will be ignored when
+C<p_check> is defined.
+
+An example, where C<FooBar()> is some external hashing function:
+
+    p_check => sub {
+        my ($hash_from_db, $password) = @_;
+        return $hash_from_db eq FooBar($password);
+    },
+
+Importantly, the C<p_check> subroutine allows for arbitrarily complex password
+checking unlike C<p_enc_pkg> and C<p_enc_sub>.
+
 =item p_enc_pkg, p_enc_sub
 
 The Perl package and subroutine used to encrypt passwords from the
@@ -135,6 +159,7 @@ sub GetAuth {
     my $db_table        = $config->{'table'};
     my $db_u_field      = $config->{'u_field'};
     my $db_p_field 	    = $config->{'p_field'};
+    my $db_p_check      = $config->{'p_check'};
     my $db_p_enc_pkg    = $config->{'p_enc_pkg'};
     my $db_p_enc_sub    = $config->{'p_enc_sub'};
     my $db_p_salt       = $config->{'p_salt'};
@@ -177,6 +202,34 @@ sub GetAuth {
     
     # Get the user's password from the database query result
     my $pass_from_db = $results_hashref->{$username}->{$db_p_field};        
+
+    if ( $db_p_check ) {
+        unless ( ref $db_p_check eq 'CODE' ) {
+            $RT::Logger->error( "p_check for $service is not a code" );
+            return 0;
+        }
+        my $check = 0;
+        local $@;
+        eval {
+            $check = $db_p_check->( $pass_from_db, $password );
+            1;
+        } or do {
+            $RT::Logger->error( "p_check for $service failed: $@" );
+            return 0;
+        };
+        unless ( $check ) {
+            $RT::Logger->info(
+                "$service AUTH FAILED for $username: Password Incorrect (via p_check)"
+            );
+        } else {
+            $RT::Logger->info(  (caller(0))[3], 
+                                "External Auth OK (",
+                                $service,
+                                "):", 
+                                $username);
+        }
+        return $check;
+    }
 
     # This is the encryption package & subroutine passed in by the config file
     $RT::Logger->debug( "Encryption Package:",
