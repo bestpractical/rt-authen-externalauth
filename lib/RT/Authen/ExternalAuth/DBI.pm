@@ -31,6 +31,12 @@ Provides the database implementation for L<RT::Authen::ExternalAuth>.
             'u_field'                   =>  'username',
             'p_field'                   =>  'password',
 
+            # Example of custom hashed password check
+            #'p_check'                   =>  sub {
+            #    my ($hash_from_db, $password) = @_;
+            #    return $hash_from_db eq function($password);
+            #},
+
             'p_enc_pkg'                 =>  'Crypt::MySQL',
             'p_enc_sub'                 =>  'password',
             'p_salt'                    =>  'SALT',
@@ -98,6 +104,24 @@ The field in the table that holds usernames
 =item p_field
 
 The field in the table that holds passwords
+
+=item p_check
+
+Optional.  An anonymous subroutine definition used to check the (presumably
+hashed) passed from the database with the password entered by the user logging
+in.  The subroutine should return true on success and false on failure.  The
+configuration options C<p_enc_pkg> and C<p_enc_sub> will be ignored when
+C<p_check> is defined.
+
+An example, where C<FooBar()> is some external hashing function:
+
+    p_check => sub {
+        my ($hash_from_db, $password) = @_;
+        return $hash_from_db eq FooBar($password);
+    },
+
+Importantly, the C<p_check> subroutine allows for arbitrarily complex password
+checking unlike C<p_enc_pkg> and C<p_enc_sub>.
 
 =item p_enc_pkg, p_enc_sub
 
