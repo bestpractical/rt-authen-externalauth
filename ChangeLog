@@ -1,3 +1,6 @@
+0.17
+	* forbid to use RT's DB as external service
+
 0.16	2013-06-27	Thomas Sibley
 	* Add new p_check option to DBI authentication module
 
