@@ -1,5 +1,5 @@
-0.17
-	* forbid to use RT's DB as external service
+0.17	2013-07-10	Thomas Sibley
+	* Forbid using RT's internal Users table as an auth service
 
 0.16	2013-06-27	Thomas Sibley
 	* Add new p_check option to DBI authentication module
