@@ -169,6 +169,7 @@ sub DoAuth {
         next unless $conf{type} eq 'db';
 
         # user/pass might be different (root, for instance)
+        no warnings 'uninitialized';
         next unless lc $conf{server} eq lc $RT::DatabaseHost and
                     lc $conf{database} eq lc $RT::DatabaseName and
                     lc $conf{table} eq 'users';
