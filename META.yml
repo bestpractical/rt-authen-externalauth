@@ -33,4 +33,4 @@ requires:
   Net::SSLeay: 0
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 0.17
+version: 0.18

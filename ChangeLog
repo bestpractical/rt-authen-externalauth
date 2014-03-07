@@ -1,3 +1,6 @@
+0.18 2014-03-07 Kevin falcone
+	- Remove docs that reference unmerged features (multiple emails)
+
 0.17	2013-07-10	Thomas Sibley
 	* Forbid using RT's internal Users table as an auth service
 
