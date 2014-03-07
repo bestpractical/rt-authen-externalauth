@@ -129,11 +129,10 @@ CONFIGURATION
             ...
         },
 
-    Note that only one value storred in RT. However, search goes by all
-    external attributes if such RT field list in "attr_match_list". On
-    create or update entered value is used as long as it's valid. If user
-    didn't enter value then value stored in the first external attribute is
-    used. Config example:
+    Note that only one value is stored in RT. However, the search includes
+    all external attributes if the RT field is listed in "attr_match_list".
+    On create or update, the entered value is used as long as it's valid.
+    Below is an example configuration:
 
         attr_match_list => ['Name', 'EmailAddress'],
         attr_map => {
@@ -141,6 +140,32 @@ CONFIGURATION
             EmailAddress => ['mail', 'alias'],
             ...
         },
+
+    If the user didn't enter a value then the value stored in the first
+    external attribute is used, in the example above 'mail'. In the common
+    case of email, if an email comes in from an address matched via an
+    'alias' entry, after the match the value in 'mail' will be used for
+    EmailAddress. So when mapping LDAP entries to RT, make sure the first
+    entry in the array of options to EmailAddress is the one you want RT to
+    use internally as the EmailAddress.
+
+   attr_prefix
+    In some cases, multiple-value LDAP attributes may have a prefix on the
+    values in the LDAP entry. The "attr_prefix" allows you to set values to
+    prepend to filter terms before searching. For example, if you want an
+    email address to match 'alias' in an LDAP entry that prepends 'other:'
+    to the email address, you can do the following:
+
+        attr_prefix => {
+            alias => ['other:'],
+            ...
+        },
+
+    The key must be included in the "attr_map" or it won't be checked. To
+    search on an attribute with no value prepended in addition to some
+    prepended values, include an empty string '' in the list. The most
+    common case for this is the proxyAddresses needing the value 'smtp:'
+    prepended, so that happens automatically.
 
 AUTHOR
         Mike Peachey

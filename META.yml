@@ -20,7 +20,6 @@ no_index:
     - etc
     - html
     - inc
-    - t
     - xt
 recommends:
   CGI::Cookie: 0
