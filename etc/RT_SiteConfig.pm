@@ -156,53 +156,6 @@ For example, an LDAP mapping might look like:
         ...
     },
 
-Since version 0.10 it's possible to map one RT field to multiple
-external attributes, for example:
-
-    attr_map => {
-        EmailAddress => ['mail', 'alias'],
-        ...
-    },
-
-Note that only one value is stored in RT, so this doesn't enable RT
-users to have multiple email addresses defined. However, the search
-will use all of the attributes to try to match a user if the field is
-defined in the C<attr_match_list>.
-
-On create or update, the original value input by the user, from an email
-or login attempt, is used as long as it's valid. If user didn't enter a
-value for that attribute, then the value retrieved from the first external
-attribute is used.
-
-For example, for the following configuration:
-
-    attr_match_list => ['Name', 'EmailAddress'],
-    attr_map => {
-        Name         => 'account',
-        EmailAddress => ['mail', 'alias'],
-        ...
-    },
-
-If a new user sent an email to RT from an email alias, the search
-would match on the alias and that alias would be set as the user's
-EmailAddress in RT when the new account is created.
-
-However, if a user with an existing RT account with EmailAddress set to the
-C<mail> address, sent mail from C<alias>, it would still match. The user's
-EmailAddress in RT would remain the primary C<mail> address.
-
-This feature is useful for LDAP configurations where users have
-a primary institutional email address, but might also use aliases from
-subdomains or other email services. This prevents RT from creating
-multiple accounts for the same person.
-
-If you want the RT user accounts to always have the primary C<mail>
-address for EmailAddress, you likely want to run
-L<RT::Extension::LDAPImport> to make sure the user accounts are
-created with the desired email address set.
-
-=back
-
 =back
 
 =cut
