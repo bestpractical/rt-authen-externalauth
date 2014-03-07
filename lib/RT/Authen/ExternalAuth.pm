@@ -1,6 +1,6 @@
 package RT::Authen::ExternalAuth;
 
-our $VERSION = '0.11_01';
+our $VERSION = '0.17';
 
 =head1 NAME
 
@@ -98,7 +98,7 @@ If you are using RT 3.8.x, you need to enable this
 module by adding RT::Authen::ExternalAuth to your
 @Plugins configuration:
 
-Set( @Plugins, qw(RT::Authen::ExternalAuth) );
+    Set( @Plugins, qw(RT::Authen::ExternalAuth) );
 
 If you already have a @Plugins line, add RT::Authen::ExternalAuth to the
 existing list.  Adding a second @Plugins line will cause interesting
@@ -205,7 +205,7 @@ General Public License. The license is distributed with
 this package in the LICENSE file found in the directory 
 root.
 
-=cut    
+=cut
 
 use RT::Authen::ExternalAuth::LDAP;
 use RT::Authen::ExternalAuth::DBI;
@@ -237,6 +237,33 @@ sub DoAuth {
     unless(defined($RT::ExternalInfoPriority)) {
         $RT::Logger->debug("ExternalInfoPriority not defined. User information (including user enabled/disabled cannot be externally-sourced");
         $no_info_check = 1;
+    }
+
+    # Ensure people don't misconfigure DBI auth to point to RT's Users table
+    for my $service (keys %$RT::ExternalSettings) {
+        my %conf = %{ $RT::ExternalSettings->{$service} };
+        next unless $conf{type} eq 'db';
+
+        # user/pass might be different (root, for instance)
+        no warnings 'uninitialized';
+        next unless lc $conf{server} eq lc $RT::DatabaseHost and
+                    lc $conf{database} eq lc $RT::DatabaseName and
+                    lc $conf{table} eq 'users';
+
+        $RT::Logger->error(
+            "RT::Authen::ExternalAuth should _not_ be configured with a database auth service ".
+            "that points back to RT's internal Users table.  Removing the service '$service'! ".
+            "Please remove it from your config file."
+        );
+
+        # Remove it!
+        delete $RT::ExternalSettings->{$service};
+
+        @$RT::ExternalAuthPriority = grep { $_ ne $service } @$RT::ExternalAuthPriority
+            if $RT::ExternalAuthPriority;
+
+        @$RT::ExternalInfoPriority = grep { $_ ne $service } @$RT::ExternalInfoPriority
+            if $RT::ExternalInfoPriority;
     }
 
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
@@ -420,6 +447,10 @@ sub DoAuth {
                                 $ENV{'REMOTE_ADDR'});
             # Do not delete the session. User stays logged in and
             # autohandler will not check the password again
+
+            my $cu = $session->{CurrentUser};
+            RT::Interface::Web::InstantiateNewSession();
+            $session->{CurrentUser} = $cu;
     } else {
             # Make SURE the session is purged to an empty user.
             $session->{'CurrentUser'} = RT::CurrentUser->new;
@@ -489,23 +520,12 @@ sub UpdateUserInfo {
 
     # For each piece of information returned by CanonicalizeUserInfo,
     # run the Set method for that piece of info to change it for the user
-    foreach my $key (sort(keys(%args))) {
-        next unless $args{$key};
-        my $method = "Set$key";
-        # We do this on the UserObj from above, not self so that there 
-        # are no permission restrictions on setting information
-        my ($method_success,$method_msg) = $UserObj->$method($args{$key});
-        
-        # If your user information is not getting updated, 
-        # uncomment the following logging statements
-        if ($method_success) {
-            # At DEBUG level, log that method succeeded
-            # $RT::Logger->debug((caller(0))[3],"$method Succeeded. $method_msg");
-        } else {
-            # At DEBUG level, log that method failed
-            # $RT::Logger->debug((caller(0))[3],"$method Failed. $method_msg");
-        }
-    }
+    my @results = $UserObj->Update(
+        ARGSRef         => \%args,
+        AttributesRef   => [keys %args],
+    );
+    $RT::Logger->debug("UPDATED user $username: $_")
+        for @results;
 
     # Confirm update success
     $updated = 1;

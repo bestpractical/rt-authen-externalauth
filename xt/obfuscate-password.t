@@ -21,7 +21,7 @@ RT->Config->Set(
 my ($base, $m) = RT::Test->started_ok();
 ok( $m->login, 'logged in' );
 
-$m->follow_link_ok({ id_regex => qr/config-tools-configuration$/i }, 'config page');
+$m->get_ok('/Admin/Tools/Configuration.html', 'config page');
 $m->content_lacks('sekrit', 'external source 1 pass obfuscated');
 $m->content_lacks('nottelling', 'external source 2 pass obfuscated');
 $m->content_contains('ldap_bind', 'sanity check: we do have external config dumped');

@@ -80,7 +80,7 @@ INSTALLATION
     If you are using RT 3.8.x, you need to enable this module by adding
     RT::Authen::ExternalAuth to your @Plugins configuration:
 
-    Set( @Plugins, qw(RT::Authen::ExternalAuth) );
+        Set( @Plugins, qw(RT::Authen::ExternalAuth) );
 
     If you already have a @Plugins line, add RT::Authen::ExternalAuth to the
     existing list. Adding a second @Plugins line will cause interesting

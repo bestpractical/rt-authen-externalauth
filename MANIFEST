@@ -27,6 +27,7 @@ lib/RT/Authen/ExternalAuth/Test.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
+MANIFEST.SKIP
 META.yml
 README
 xt/ldap/basics.t
@@ -36,5 +37,7 @@ xt/ldap/privileged.t
 xt/ldap/user-create.t
 xt/ldap_escaping.t
 xt/ldap_group.t
+xt/ldap_privileged.t
 xt/obfuscate-password.t
+xt/sessions.t
 xt/sqlite.t

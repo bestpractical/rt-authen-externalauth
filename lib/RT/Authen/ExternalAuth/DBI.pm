@@ -5,6 +5,150 @@ use RT::Authen::ExternalAuth::DBI::Cookie;
 
 use strict;
 
+=head1 NAME
+
+RT::Authen::ExternalAuth::DBI - External database source for RT authentication
+
+=head1 DESCRIPTION
+
+Provides the database implementation for L<RT::Authen::ExternalAuth>.
+
+=head1 SYNOPSIS
+
+    Set($ExternalSettings, {
+        'My_MySQL'   =>  {
+            'type'                      =>  'db',
+
+            'dbi_driver'                =>  'DBI_DRIVER',
+
+            'server'                    =>  'server.domain.tld',
+            'port'                      =>  'DB_PORT',
+            'user'                      =>  'DB_USER',
+            'pass'                      =>  'DB_PASS',
+
+            'database'                  =>  'DB_NAME',
+            'table'                     =>  'USERS_TABLE',
+            'u_field'                   =>  'username',
+            'p_field'                   =>  'password',
+
+            # Example of custom hashed password check
+            #'p_check'                   =>  sub {
+            #    my ($hash_from_db, $password) = @_;
+            #    return $hash_from_db eq function($password);
+            #},
+
+            'p_enc_pkg'                 =>  'Crypt::MySQL',
+            'p_enc_sub'                 =>  'password',
+            'p_salt'                    =>  'SALT',
+
+            'd_field'                   =>  'disabled',
+            'd_values'                  =>  ['0'],
+
+            'attr_match_list' =>  [
+                'Gecos',
+                'Name',
+            ],
+            'attr_map' => {
+                'Name'           => 'username',
+                'EmailAddress'   => 'email',
+                'ExternalAuthId' => 'username',
+                'Gecos'          => 'userID',
+            },
+        },
+    } );
+
+=head1 CONFIGURATION
+
+DBI-specific options are described here. Shared options
+are described in the F<etc/RT_SiteConfig.pm> file included
+in this distribution.
+
+The example in the L</SYNOPSIS> lists all available options
+and they are described below. See the L<DBI> module for details
+on debugging connection issues.
+
+=over 4
+
+=item dbi_driver
+
+The name of the Perl DBI driver to use (e.g. mysql, Pg, SQLite).
+
+=item server
+
+The server hosting the database.
+
+=item port
+
+The port to use to connect on (e.g. 3306).
+
+=item user
+
+The database user for the connection.
+
+=item pass
+
+The password for the database user.
+
+=item database
+
+The database name.
+
+=item table
+
+The database table containing the user information to check against.
+
+=item u_field
+
+The field in the table that holds usernames
+
+=item p_field
+
+The field in the table that holds passwords
+
+=item p_check
+
+Optional.  An anonymous subroutine definition used to check the (presumably
+hashed) passed from the database with the password entered by the user logging
+in.  The subroutine should return true on success and false on failure.  The
+configuration options C<p_enc_pkg> and C<p_enc_sub> will be ignored when
+C<p_check> is defined.
+
+An example, where C<FooBar()> is some external hashing function:
+
+    p_check => sub {
+        my ($hash_from_db, $password) = @_;
+        return $hash_from_db eq FooBar($password);
+    },
+
+Importantly, the C<p_check> subroutine allows for arbitrarily complex password
+checking unlike C<p_enc_pkg> and C<p_enc_sub>.
+
+=item p_enc_pkg, p_enc_sub
+
+The Perl package and subroutine used to encrypt passwords from the
+database. For example, if the passwords are stored using the MySQL
+v3.23 "PASSWORD" function, then you will need the L<Crypt::MySQL>
+C<password> function, but for the MySQL4+ password you will need
+L<Crypt::MySQL>'s C<password41>. Alternatively, you could use
+L<Digest::MD5> C<md5_hex> or any other encryption subroutine you can
+load in your Perl installation.
+
+=item p_salt
+
+If p_enc_sub takes a salt as a second parameter then set it here.
+
+=item d_field, d_values
+
+The field and values in the table that determines if a user should
+be disabled. For example, if the field is 'user_status' and the values
+are ['0','1','2','disabled'] then the user will be disabled if their
+user_status is set to '0','1','2' or the string 'disabled'.
+Otherwise, they will be considered enabled.
+
+=back
+
+=cut
+
 sub GetAuth {
 
     my ($service, $username, $password) = @_;
@@ -15,6 +159,7 @@ sub GetAuth {
     my $db_table        = $config->{'table'};
     my $db_u_field      = $config->{'u_field'};
     my $db_p_field 	    = $config->{'p_field'};
+    my $db_p_check      = $config->{'p_check'};
     my $db_p_enc_pkg    = $config->{'p_enc_pkg'};
     my $db_p_enc_sub    = $config->{'p_enc_sub'};
     my $db_p_salt       = $config->{'p_salt'};
@@ -57,6 +202,34 @@ sub GetAuth {
     
     # Get the user's password from the database query result
     my $pass_from_db = $results_hashref->{$username}->{$db_p_field};        
+
+    if ( $db_p_check ) {
+        unless ( ref $db_p_check eq 'CODE' ) {
+            $RT::Logger->error( "p_check for $service is not a code" );
+            return 0;
+        }
+        my $check = 0;
+        local $@;
+        eval {
+            $check = $db_p_check->( $pass_from_db, $password );
+            1;
+        } or do {
+            $RT::Logger->error( "p_check for $service failed: $@" );
+            return 0;
+        };
+        unless ( $check ) {
+            $RT::Logger->info(
+                "$service AUTH FAILED for $username: Password Incorrect (via p_check)"
+            );
+        } else {
+            $RT::Logger->info(  (caller(0))[3], 
+                                "External Auth OK (",
+                                $service,
+                                "):", 
+                                $username);
+        }
+        return $check;
+    }
 
     # This is the encryption package & subroutine passed in by the config file
     $RT::Logger->debug( "Encryption Package:",

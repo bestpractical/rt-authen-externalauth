@@ -7,8 +7,18 @@ use RT::Authen::ExternalAuth;
 
 my ($val,$msg);
 unless($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
+    # It's important to nab the next page from the session before we
+    # potentially blow the session away below.
+    my $next = $session{'NextPage'}->{ $ARGS{'next'} || "" };
+       $next = $next->{'url'} if ref $next;
+
     ($val,$msg) = RT::Authen::ExternalAuth::DoAuth(\%session,$user,$pass);
     $RT::Logger->debug("Autohandler called ExternalAuth. Response: ($val, $msg)");
+
+    # 3.8.9 doesn't redirect to the specified page if request has one.
+    RT::Interface::Web::Redirect( $next )
+        if $val and $next
+       and $m->request_comp->path eq '/NoAuth/Login.html';
 }
 
 return;

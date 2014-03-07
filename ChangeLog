@@ -8,6 +8,32 @@
     * support mapping fields in RT to multiple attributes
       in external source (LDAP/DBI)
 
+0.17	2013-07-10	Thomas Sibley
+	* Forbid using RT's internal Users table as an auth service
+
+0.16	2013-06-27	Thomas Sibley
+	* Add new p_check option to DBI authentication module
+
+0.15	2013-05-22	Thomas Sibley
+	* Minor documentation updates to add NAME sections for MetaCPAN
+
+0.14	2013-05-22	Thomas Sibley
+	* Prevent potential session reuse when Apache::Session::File is RT's
+	  $WebSessionClass.  This is also resolved by RT versions 4.0.13 and
+	  3.8.17 and by the May 2013 security patches.  Changes here are purely
+	  for correctness/bulletproofing down the road.
+
+	* Moved much documentation from comments into POD; cleanups are still
+	  needed, but this is a good start.
+
+0.13	2013-01-31	Thomas Sibley
+	* Cut down on code by using the core RT::Record->Update method
+
+0.12	2012-10-26	Thomas Sibley
+	* Redirect correctly after login on RT 4.0.8, 3.8.15, and the 2012-10-25 security patches
+	* Added "group_scope" as a configurable option.
+	* Tests: Add to LDAP the base DN under which we search for users/groups
+
 0.11    2012-07-03  Alex Vandiver
 	* Obfuscate passwords in RT's System Configuration page
 	* Set an empty CurrentUser on failure, instead of removing it entirely

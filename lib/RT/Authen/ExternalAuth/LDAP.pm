@@ -8,6 +8,143 @@ use strict;
 
 require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
 
+=head1 NAME
+
+RT::Authen::ExternalAuth::LDAP - LDAP source for RT authentication
+
+=head1 DESCRIPTION
+
+Provides the LDAP implementation for L<RT::Authen::ExternalAuth>.
+
+=head1 SYNOPSIS
+
+    Set($ExternalSettings, {
+        # AN EXAMPLE LDAP SERVICE
+        'My_LDAP'       =>  {
+            'type'                      =>  'ldap',
+
+            'server'                    =>  'server.domain.tld',
+            'user'                      =>  'rt_ldap_username',
+            'pass'                      =>  'rt_ldap_password',
+
+            'base'                      =>  'ou=Organisational Unit,dc=domain,dc=TLD',
+            'filter'                    =>  '(FILTER_STRING)',
+            'd_filter'                  =>  '(FILTER_STRING)',
+
+            'group'                     =>  'GROUP_NAME',
+            'group_attr'                =>  'GROUP_ATTR',
+
+            'tls'                       =>  0,
+            'ssl_version'               =>  3,
+
+            'net_ldap_args'             => [    version =>  3   ],
+
+            'attr_match_list' => [
+                'Name',
+                'EmailAddress',
+                'RealName',
+                'WorkPhone',
+                'Address2'
+            ],
+            'attr_map' => {
+                'Name' => 'sAMAccountName',
+                'EmailAddress' => 'mail',
+                'Organization' => 'physicalDeliveryOfficeName',
+                'RealName' => 'cn',
+                'ExternalAuthId' => 'sAMAccountName',
+                'Gecos' => 'sAMAccountName',
+                'WorkPhone' => 'telephoneNumber',
+                'Address1' => 'streetAddress',
+                'City' => 'l',
+                'State' => 'st',
+                'Zip' => 'postalCode',
+                'Country' => 'co'
+            },
+        },
+    } );
+
+=head1 CONFIGURATION
+
+LDAP-specific options are described here. Shared options
+are described in the F<etc/RT_SiteConfig.pm> file included
+in this distribution.
+
+The example in the L</SYNOPSIS> lists all available options
+and they are described below. Note that many of these values
+are specific to LDAP, so you should consult your LDAP
+documentation for details.
+
+=over 4
+
+=item server
+
+The server hosting the LDAP or AD service.
+
+=item user, pass
+
+The username and password RT should use to connect to the LDAP
+server.
+
+If you can bind to your LDAP server anonymously you shouldn't
+set these options.
+
+=item base
+
+The LDAP search base.
+
+=item filter
+
+The filter to use to match RT users. You B<must> specify it
+and it B<must> be a valid LDAP filter encased in parentheses.
+
+For example:
+
+    filter => '(objectClass=*)',
+
+=item d_filter
+
+The filter that will only match disabled users. Optional.
+B<Must> be a valid LDAP filter encased in parentheses.
+
+For example with Active Directory the following can be used:
+
+    d_filter => '(userAccountControl:1.2.840.113556.1.4.803:=2)'
+
+=item group
+
+Does authentication depend on group membership? What group name?
+
+=item group_attr
+
+What is the attribute for the group object that determines membership?
+
+=item group_scope
+
+What is the scope of the group search? C<base>, C<one> or C<sub>.
+Optional; defaults to C<base>, which is good enough for most cases.
+C<sub> is appropriate when you have nested groups.
+
+=item group_attr_value
+
+What is the attribute of the user entry that should be matched against
+group_attr above? Optional; defaults to C<dn>.
+
+=item tls
+
+Should we try to use TLS to encrypt connections?
+
+=item ssl_version
+
+SSL Version to provide to Net::SSLeay *if* using SSL.
+
+=item net_ldap_args
+
+What other args should be passed to Net::LDAP->new($host,@args)?
+
+=back
+
+=cut
+
 sub GetAuth {
     my ($service, $username, $password) = @_;
     
