@@ -1,0 +1,3 @@
+* xt/ldap/multiple-emails.t fails because of warnings calling lc RT->SystemUser->EmailAddress in RT::Attachment->Addresses
+* The tests want to be revisited and more things to move into xt/ldap
+* A better review of the actual code in here
