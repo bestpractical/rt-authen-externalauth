@@ -84,11 +84,13 @@ sub setup_auth_source {
         );
     EOF
     $dbh->do( $schema );
-    $dbh->do(<<"    SQL");
-        INSERT INTO $table VALUES
-            ( 'tom',  '$password', 'tom\@invalid.tld'),
-            ( 'alex', '$password', 'alex\@invalid.tld');
-    SQL
+
+    foreach my $user ( qw(tom alex) ){
+        $dbh->do(<<"            SQL");
+            INSERT INTO $table VALUES
+            ( '$user',  '$password', '$user\@invalid.tld');
+            SQL
+    }
 
     RT->Config->Set( ExternalAuthPriority        => ['My_SQLite'] );
     RT->Config->Set( ExternalInfoPriority        => ['My_SQLite'] );
