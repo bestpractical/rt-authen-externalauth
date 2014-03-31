@@ -85,7 +85,7 @@ The outer structure is a key with the authentication option (name of external
 source). The value is a hash reference with configuration keys and values,
 for example:
 
-    Set($ExternalSettings,
+    Set($ExternalSettings, {
         MyLDAP => {
             type => 'ldap',
             ... other options ...
@@ -95,7 +95,7 @@ for example:
             ... other options ...
         },
         ... other sources ...
-    );
+        } );
 
 As shown above, each description should have 'type' defined.
 The following types are supported:
