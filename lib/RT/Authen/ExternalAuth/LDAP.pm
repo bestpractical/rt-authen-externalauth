@@ -42,9 +42,6 @@ Provides the LDAP implementation for L<RT::Authen::ExternalAuth>.
             'attr_match_list' => [
                 'Name',
                 'EmailAddress',
-                'RealName',
-                'WorkPhone',
-                'Address2'
             ],
             'attr_map' => {
                 'Name' => 'sAMAccountName',
