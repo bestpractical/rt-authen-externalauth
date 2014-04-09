@@ -1,3 +1,6 @@
+0.20 2014-04-09 Kevin Falcone
+ - Fix bad attr_match_list example in the synopsis
+
 0.19 2014-04-04 Kevin Falcone
  - Fix a bug in the ExternalSettings doc example in RT_SiteConfig.pm
 
