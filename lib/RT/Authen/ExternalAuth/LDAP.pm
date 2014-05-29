@@ -82,8 +82,11 @@ The server hosting the LDAP or AD service.
 The username and password RT should use to connect to the LDAP
 server.
 
-If you can bind to your LDAP server anonymously you shouldn't
-set these options.
+If you can bind to your LDAP server anonymously you may be able to omit these
+options.  Many servers do not allow anonymous binds, or restrict what information
+they can see or how much information they can retrieve.  If your server does not
+allow anonymous binds then you must have a service account created for this
+extension to function.
 
 =item base
 
