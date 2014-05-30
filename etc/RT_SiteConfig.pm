@@ -137,8 +137,10 @@ at minimum. For example:
     'attr_match_list' => [
         'Name',
         'EmailAddress',
-        'RealName',
     ],
+
+You should not use items that can map to multiple users (such as a
+RealName or building name).
 
 =item attr_map
 
