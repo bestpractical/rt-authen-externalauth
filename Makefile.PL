@@ -3,7 +3,6 @@ use inc::Module::Install;
 RTx('RT-Authen-ExternalAuth');
 
 license('GPL version 2');
-author('Mike Peachey <zordrak@cpan.org>');
 
 all_from('lib/RT/Authen/ExternalAuth.pm');
 readme_from;
@@ -33,6 +32,8 @@ author_tests('xt');
 requires_rt('3.8.2');
 
 &auto_install();
+
+repository 'https://github.com/bestpractical/rt-authen-externalauth';
 
 sign;
 &WriteAll;

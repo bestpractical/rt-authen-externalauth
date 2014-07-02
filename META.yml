@@ -1,8 +1,7 @@
 ---
 abstract: 'RT Authentication using External Sources'
 author:
-  - 'Mike Peachey'
-  - 'Mike Peachey <zordrak@cpan.org>'
+  - 'Best Practical Solutions <modules@bestpractical.com>'
 build_requires:
   ExtUtils::MakeMaker: 6.59
 configure_requires:
@@ -34,6 +33,7 @@ requires:
   perl: 5.8.3
 resources:
   license: http://opensource.org/licenses/gpl-license.php
+  repository: https://github.com/bestpractical/rt-authen-externalauth
 version: '0.20'
 x_module_install_rtx_version: 0.34_04
 x_requires_rt: 3.8.2

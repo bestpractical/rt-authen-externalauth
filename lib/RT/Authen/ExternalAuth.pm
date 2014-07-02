@@ -113,16 +113,16 @@ Then use the examples provided to prepare your own custom
 configuration which should be added to your site configuration in
 $RTHOME/etc/RT_SiteConfig.pm
 
-=head1 AUTHOR
-        Mike Peachey
-        Jennic Ltd.
-        zordrak@cpan.org
+=head1 AUTHORS
 
-        Various Best Practical Developers
+Best Practical Solutions <modules@bestpractical.com>
+
+Originally by Mike Peachey (Jennic Ltd.) <zordrak@cpan.org>
 
 =head1 COPYRIGHT AND LICENCE
 
 Copyright (C) 2008, Jennic Ltd.
+Copyright 2008-2014 Best Practical Solutions
 
 This software is released under version 2 of the GNU 
 General Public License. The license is distributed with
