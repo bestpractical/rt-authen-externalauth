@@ -1,3 +1,7 @@
+0.21 2014-07-01 Kevin Falcone
+ - Fix another bad attr_match_list example
+ - Better documentation about anonymous binds
+
 0.20 2014-04-09 Kevin Falcone
  - Fix bad attr_match_list example in the synopsis
 
