@@ -1,5 +1,4 @@
 ChangeLog
-etc/RT_SiteConfig.pm
 html/Callbacks/ExternalAuth/autohandler/Auth
 html/Callbacks/ExternalAuth/autohandler/Session
 html/Callbacks/ExternalAuth/Elements/Header/Head

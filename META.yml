@@ -1,7 +1,7 @@
 ---
 abstract: 'RT Authentication using External Sources'
 author:
-  - 'Best Practical Solutions <modules@bestpractical.com>'
+  - 'Best Practical Solutions, LLC <modules@bestpractical.com>'
 build_requires:
   ExtUtils::MakeMaker: 6.59
 configure_requires:
@@ -16,7 +16,6 @@ meta-spec:
 name: RT-Authen-ExternalAuth
 no_index:
   directory:
-    - etc
     - html
     - inc
     - xt
@@ -34,6 +33,6 @@ requires:
 resources:
   license: http://opensource.org/licenses/gpl-license.php
   repository: https://github.com/bestpractical/rt-authen-externalauth
-version: '0.21'
+version: 0.22_01
 x_module_install_rtx_version: 0.34_04
-x_requires_rt: 3.8.2
+x_requires_rt: 4.0.0

@@ -1,6 +1,6 @@
 package RT::Authen::ExternalAuth;
 
-our $VERSION = '0.21';
+our $VERSION = '0.22_01';
 
 =head1 NAME
 
