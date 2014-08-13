@@ -52,16 +52,6 @@ Set($ExternalInfoPriority,  [ 'My_LDAP',
                             ]
 );
 
-=item C<$ExternalServiceUsesSSLorTLS>
-
-If this is set to true, then the relevant packages will
-be loaded to use SSL/TLS connections. At the moment,
-this just means L<Net::SSLeay>.
-
-=cut
-
-Set($ExternalServiceUsesSSLorTLS,    0);
-
 =item C<$AutoCreateNonExternalUsers>
 
 If this is set to 1, then users should be autocreated by RT

@@ -6,8 +6,6 @@ use Net::LDAP::Filter;
 
 use strict;
 
-require Net::SSLeay if $RT::ExternalServiceUsesSSLorTLS;
-
 =head1 NAME
 
 RT::Authen::ExternalAuth::LDAP - LDAP source for RT authentication
@@ -606,6 +604,7 @@ sub _GetBoundLdapObj {
     }
 
     if ($ldap_tls) {
+        require Net::SSLeay;
         $Net::SSLeay::ssl_version = $ldap_ssl_ver;
         # Thanks to David Narayan for the fault tolerance bits
         eval { $ldap->start_tls; };

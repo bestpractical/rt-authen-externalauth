@@ -30,7 +30,6 @@ $ldap->add( $dn, attr => [%$entry] );
 
 RT->Config->Set( ExternalAuthPriority        => ['My_LDAP'] );
 RT->Config->Set( ExternalInfoPriority        => ['My_LDAP'] );
-RT->Config->Set( ExternalServiceUsesSSLorTLS => 0 );
 RT->Config->Set( AutoCreateNonExternalUsers  => 0 );
 RT->Config->Set( AutoCreate                  => { Privileged => 1 } );
 RT->Config->Set(

@@ -60,7 +60,6 @@ $ldap->add(
 #RT->Config->Set( Plugins                     => 'RT::Authen::ExternalAuth' );
 RT->Config->Set( ExternalAuthPriority        => ['My_LDAP'] );
 RT->Config->Set( ExternalInfoPriority        => ['My_LDAP'] );
-RT->Config->Set( ExternalServiceUsesSSLorTLS => 0 );
 RT->Config->Set( AutoCreateNonExternalUsers  => 0 );
 RT->Config->Set( AutoCreate  => undef );
 RT->Config->Set(

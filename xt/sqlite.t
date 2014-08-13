@@ -30,7 +30,6 @@ $dbh->do(
 
 RT->Config->Set( ExternalAuthPriority        => ['My_SQLite'] );
 RT->Config->Set( ExternalInfoPriority        => ['My_SQLite'] );
-RT->Config->Set( ExternalServiceUsesSSLorTLS => 0 );
 RT->Config->Set( AutoCreateNonExternalUsers  => 0 );
 RT->Config->Set( AutoCreate                  => undef );
 RT->Config->Set(
