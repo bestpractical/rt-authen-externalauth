@@ -8,21 +8,63 @@ RT::Authen::ExternalAuth - RT Authentication using External Sources
 
 =head1 DESCRIPTION
 
-A complete package for adding external authentication mechanisms
-to RT. It currently supports LDAP via Net::LDAP and External Database
-authentication for any database with an installed DBI driver.
+This module provides the ability to authenticate RT users against one or
+more external data sources at once. It will also allow information about
+that user to be loaded from the same, or any other available, source as
+well as allowing multple redundant servers for each method.
 
-It also allows for authenticating cookie information against an
-external database through the use of the RT-Authen-CookieAuth extension.
+The extension currently supports authentication and information from
+LDAP via the Net::LDAP module, and from any data source that an
+installed DBI driver is available for.
+
+It is also possible to use cookies set by an alternate application for
+Single Sign-On (SSO) with that application.  For example, you may
+integrate RT with your own website login system so that once users log
+in to your website, they will be automagically logged in to RT when they
+access it.
+
+=head1 INSTALLATION
+
+=over
+
+=item C<perl Makefile.PL>
+
+=item C<make>
+
+=item C<make install>
+
+May need root permissions
+
+=item Edit your F</opt/rt4/etc/RT_SiteConfig.pm>
+
+If you are using RT 4.2 or greater, add this line:
+
+    Plugin('RT::Authen::ExternalAuth');
+
+For RT 4.0, add this line:
+
+    Set(@Plugins, qw(RT::Authen::ExternalAuth) );
+
+or add C<RT::Authen::ExternalAuth> to your existing C<@Plugins> line.
+
+Once installed, you should view the file:
+
+    /opt/rt4/local/plugins/RT-Authen-ExternalAuth/etc/RT_SiteConfig.pm
+
+Then use the examples provided to prepare your own custom configuration
+which should be added to your site configuration in
+/opt/rt4/etc/RT_SiteConfig.pm
+
+=back
 
 =head1 UPGRADING
 
 If you are upgrading from an earlier version of this extension, you must
 remove the following files manually:
 
-    $RTHOME/local/plugins/RT-Authen-ExternalAuth/lib/RT/User_Vendor.pm
-    $RTHOME/local/lib/RT/User_Vendor.pm
-    $RTHOME/local/lib/RT/Authen/External_Auth.pm
+    /opt/rt4/local/plugins/RT-Authen-ExternalAuth/lib/RT/User_Vendor.pm
+    /opt/rt4/local/lib/RT/User_Vendor.pm
+    /opt/rt4/local/lib/RT/Authen/External_Auth.pm
 
 Otherwise you will most likely encounter an error about modifying a read
 only value and be unable to start RT.
@@ -31,103 +73,34 @@ You may not have all of these files.  It depends what versions you are
 upgrading between.
 
 If you are using a vendor packaged RT, your local directories are likely
-to be somewhere under /usr/local instead of in $RTHOME so you will need
+to be somewhere under /usr/local instead of in /opt/rt4 so you will need
 to visit Configuration -> Tools -> System Configuration to find your
 plugin root.
 
-=head2 VERSION NOTES
-
-If you are using RT 3.6, you want to use the 0.05 version.
-
-If you are using RT 3.8.0 or 3.8.1, you may have trouble using this
-due to RT bugs related to plugins, but you may be able to use 0.08.
-
-0.08_02 or later will not work on 3.8.0 or 3.8.1
-
-If you are using RT 4.0.0 or greater, you must use at least 0.09
-
-=head1 MORE ABOUT THIS MODULE 
-
-This module provides the ability to authenticate RT users
-against one or more external data sources at once. It will
-also allow information about that user to be loaded from
-the same, or any other available, source as well as allowing
-multple redundant servers for each method.
-
-The extension currently supports authentication and 
-information from LDAP via the Net::LDAP module, and from
-any data source that an installed DBI driver is available
-for. 
-
-It is also possible to use cookies set by an alternate
-application for Single Sign-On (SSO) with that application.
-For example, you may integrate RT with your own website login
-system so that once users log in to your website, they will be
-automagically logged in to RT when they access it.
-
-It was originally designed and tested against: 
-
-MySQL v4.1.21-standard
-MySQL v5.0.22
-Windows Active Directory v2003
-
-But it has been designed so that it should work with ANY
-LDAP service and ANY DBI-drivable database, based upon the
-configuration given in your $RTHOME/etc/RT_SiteConfig.pm
-
-As of v0.08 ExternalAuth also allows you to pull a browser
-cookie value and test it against a DBI data source allowing
-the use of cookies for Single Sign-On (SSO) authentication
-with another application or website login system. This is
-due to the merging of RT::Authen::ExternalAuth and
-RT::Authen::CookieAuth. For example, you may integrate RT
-with your own website login system so that once users log in
-to your website, they will be automagically logged in to RT 
-when they access it.
-
-
-=head1 INSTALLATION
-
-To install this module, run the following commands:
-
-    perl Makefile.PL
-    make
-    make install
-
-If you are using RT 3.8.x, you need to enable this
-module by adding RT::Authen::ExternalAuth to your
-@Plugins configuration:
-
-    Set( @Plugins, qw(RT::Authen::ExternalAuth) );
-
-If you already have a @Plugins line, add RT::Authen::ExternalAuth to the
-existing list.  Adding a second @Plugins line will cause interesting
-bugs.
-
-Once installed, you should view the file:
-    
-3.4/3.6    $RTHOME/local/etc/ExternalAuth/RT_SiteConfig.pm
-3.8        $RTHOME/local/plugins/RT-Authen-ExternalAuth/etc/RT_SiteConfig.pm
-
-Then use the examples provided to prepare your own custom 
-configuration which should be added to your site configuration in
-$RTHOME/etc/RT_SiteConfig.pm
-
 =head1 AUTHORS
 
-Best Practical Solutions <modules@bestpractical.com>
+Best Practical Solutions, LLC E<lt>modules@bestpractical.comE<gt>
 
 Originally by Mike Peachey (Jennic Ltd.) <zordrak@cpan.org>
 
-=head1 COPYRIGHT AND LICENCE
+=head1 BUGS
 
-Copyright (C) 2008, Jennic Ltd.
-Copyright 2008-2014 Best Practical Solutions
+All bugs should be reported via email to
 
-This software is released under version 2 of the GNU 
-General Public License. The license is distributed with
-this package in the LICENSE file found in the directory 
-root.
+    L<bug-RT-Authen-ExternalAuth@rt.cpan.org|mailto:bug-RT-Authen-ExternalAuth@rt.cpan.org>
+
+or via the web at
+
+    L<rt.cpan.org|http://rt.cpan.org/Public/Dist/Display.html?Name=RT-Authen-ExternalAuth>.
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2008-2014 by Best Practical Solutions, LLC
+Copyright (c) 2008 by Jennic Ltd.
+
+This is free software, licensed under:
+
+  The GNU General Public License, Version 2, June 1991
 
 =cut
 
