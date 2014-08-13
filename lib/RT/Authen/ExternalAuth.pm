@@ -47,13 +47,8 @@ For RT 4.0, add this line:
 
 or add C<RT::Authen::ExternalAuth> to your existing C<@Plugins> line.
 
-Once installed, you should view the file:
-
-    /opt/rt4/local/plugins/RT-Authen-ExternalAuth/etc/RT_SiteConfig.pm
-
-Then use the examples provided to prepare your own custom configuration
-which should be added to your site configuration in
-/opt/rt4/etc/RT_SiteConfig.pm
+See L</CONFIGURATION> for additional configuration to add to your
+F<RT_SiteConfig.pm> file.
 
 =back
 
@@ -76,6 +71,196 @@ If you are using a vendor packaged RT, your local directories are likely
 to be somewhere under /usr/local instead of in /opt/rt4 so you will need
 to visit Configuration -> Tools -> System Configuration to find your
 plugin root.
+
+=head1 CONFIGURATION
+
+L<RT::Authen::ExternalAuth> provides a lot of flexibility with many
+configuration options.  The following desc these configuration options,
+and provides a complete example.
+
+=over 4
+
+=item C<$ExternalAuthPriority>
+
+The order in which the services defined in L</$ExternalSettings> should
+be used to authenticate users.  Once the user has been authenticated by
+one service, the rest are skipped.
+
+You should remove services you don't use. For example, if you're only
+using C<My_LDAP>, remove C<My_MySQL> and C<My_SSO_Cookie>.
+
+    Set($ExternalAuthPriority,  [ 'My_LDAP',
+                                  'My_MySQL',
+                                  'My_SSO_Cookie'
+                                ]
+    );
+
+=item C<$ExternalInfoPriority>
+
+When multiple auth services are available, this value defines the order
+in which the services defined in L</$ExternalSettings> should be used to
+get information about users. This includes C<RealName>, telephone
+numbers etc, but also whether or not the user should be considered
+disabled.
+
+Once a user record is found, no more services are checked.
+
+You CANNOT use a SSO cookie to retrieve information.
+
+You should remove services you don't use, but you must define
+at least one service.
+
+    Set($ExternalInfoPriority,  [ 'My_LDAP',
+                                  'My_MySQL',
+                                ]
+    );
+
+=item C<$AutoCreateNonExternalUsers>
+
+If this is set to 1, then users should be autocreated by RT
+as internal users if they fail to authenticate from an
+external service. This is useful if you have users outside
+your organization who might interface with RT, perhaps by sending
+email to a support email address.
+
+=item C<$ExternalSettings>
+
+These are the full settings for each external service as a hash of
+hashes.  Note that you may have as many external services as you wish.
+They will be checked in the order specified in L</$ExternalAuthPriority>
+and L</$ExternalInfoPriority> directives above.
+
+The outer structure is a key with the authentication option (name of
+external source). The value is a hash reference with configuration keys
+and values, for example:
+
+    Set($ExternalSettings, {
+        My_LDAP => {
+            type => 'ldap',
+            ... other options ...
+        },
+        My_MySQL => {
+            type => 'db',
+            ... other options ...
+        },
+        ... other sources ...
+    } );
+
+As shown above, each description should have 'type' defined.
+The following types are supported:
+
+=over 4
+
+=item ldap
+
+Authenticate against and sync information with LDAP servers.  See
+L<RT::Authen::ExternalAuth::LDAP> for details.
+
+=item db
+
+Authenticate against and sync information with external RDBMS, supported
+by Perl's L<DBI> interface. See L<RT::Authen::ExternalAuth::DBI> for
+details.
+
+=item cookie
+
+Authenticate by cookie. See L<RT::Authen::ExternalAuth::DBI::Cookie> for
+details.
+
+=back
+
+See the modules noted above for configuration options specific to each
+type.  The following apply to all types.
+
+=over 4
+
+=item attr_match_list
+
+The list of RT attributes that uniquely identify a user. These values
+are used, in order, to find users in the selected authentication
+source. Each value specified here must have a mapping in the
+L</attr_map> section below. You can remove values you don't expect to
+match, but we recommend using C<Name> and C<EmailAddress> at a
+minimum. For example:
+
+    'attr_match_list' => [
+        'Name',
+        'EmailAddress',
+    ],
+
+You should not use items that can map to multiple users (such as a
+C<RealName> or building name).
+
+=item attr_map
+
+Mapping of RT attributes on to attributes in the external source.
+Valid keys are attributes of an
+L<RT::User|http://bestpractical.com/rt/docs/latest/RT/User.html>.
+The values are attributes from your authentication source.
+For example, an LDAP mapping might look like:
+
+    'attr_map' => {
+        'Name'         => 'sAMAccountName',
+        'EmailAddress' => 'mail',
+        'Organization' => 'physicalDeliveryOfficeName',
+        'RealName'     => 'cn',
+        ...
+    },
+
+=back
+
+=back
+
+=head2 Example
+
+    # Use the below LDAP source for both authentication, as well as user
+    # information
+    Set( $ExternalAuthPriority, ["My_LDAP"] );
+    Set( $ExternalAuthInfo,     ["My_LDAP"] );
+
+    # Users created from LDAP should be Privileged; this is a core RT
+    # option.  Additionally, this is the 4.2 name for the option; for RT
+    # 4.0, is it named $AutoCreate   See the core RT documentation at
+    # http://docs.bestpractical.com/RT_Config#UserAutocreateDefaultsOnLogin
+    # for for further details.
+    Set( $UserAutocreateDefaultsOnLogin, { Privileged => 1 } );
+
+    # Users should still be autocreated by RT as internal users if they
+    # fail to exist in an external service; this is so requestors (who
+    # are not in LDAP) can still be created when they email in.
+    Set($AutoCreateNonExternalUsers, 1);
+
+    # Minimal LDAP configuration; see RT::Authen::ExternalAuth::LDAP for
+    # further details and examples
+    Set($ExternalSettings, {
+        'My_LDAP'       =>  {
+            'type'             =>  'ldap',
+            'server'           =>  'ldap.example.com',
+            # By not passing 'user' and 'pass' we are using an anonymous
+            # bind, which some servers to not allow
+            'base'             =>  'ou=Staff,dc=example,dc=com',
+            'filter'           =>  '(objectClass=inetOrgPerson)',
+            # Users are allowed to log in via email address or account
+            # name
+            'attr_match_list'  => [
+                'Name',
+                'EmailAddress',
+            ],
+            # Import the following properties of the user from LDAP upon
+            # login
+            'attr_map' => {
+                'Name'         => 'sAMAccountName',
+                'EmailAddress' => 'mail',
+                'RealName'     => 'cn',
+                'WorkPhone'    => 'telephoneNumber',
+                'Address1'     => 'streetAddress',
+                'City'         => 'l',
+                'State'        => 'st',
+                'Zip'          => 'postalCode',
+                'Country'      => 'co',
+            },
+        },
+    } );
 
 =head1 AUTHORS
 
