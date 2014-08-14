@@ -463,7 +463,7 @@ sub UserExists {
                         "Base:",
                         $base,
                         "== Filter:",
-                        $filter->as_string,
+                        ($filter ? $filter->as_string : ''),
                         "== Attrs:",
                         join(',',@attrs));
 
@@ -557,7 +557,7 @@ sub UserDisabled {
                         "Base:",
                         $base,
                         "== Filter:",
-                        $search_filter->as_string,
+                        ($search_filter ? $search_filter->as_string : ''),
                         "== Attrs:",
                         join(',',@attrs));
 
