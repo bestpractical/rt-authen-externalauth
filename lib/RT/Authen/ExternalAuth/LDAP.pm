@@ -161,7 +161,7 @@ sub GetAuth {
     # Empty parentheses as filters cause Net::LDAP to barf.
     # We take care of this by using Net::LDAP::Filter, but
     # there's no harm in fixing this right now.
-    if ($filter eq "()") { undef($filter) };
+    undef $filter if defined $filter and $filter eq "()";
 
     # Now let's get connected
     my $ldap = _GetBoundLdapObj($config);
@@ -439,7 +439,7 @@ sub UserExists {
     # of parentheses is an invalid filter and will cause failure
     # This shouldn't matter since we are now using Net::LDAP::Filter below,
     # but there's no harm in doing this to be sure
-    if ($filter eq "()") { undef($filter) };
+    undef $filter if defined $filter and $filter eq "()";
 
     if (defined($config->{'attr_map'}->{'Name'})) {
         # Construct the complex filter
@@ -514,8 +514,8 @@ sub UserDisabled {
     # of parentheses is an invalid filter and will cause failure
     # This shouldn't matter since we are now using Net::LDAP::Filter below,
     # but there's no harm in doing this to be sure
-    if ($filter eq "()") { undef($filter) };
-    if ($d_filter eq "()") { undef($d_filter) };
+    undef $filter   if defined $filter   and $filter eq "()";
+    undef $d_filter if defined $d_filter and $d_filter eq "()";
 
     unless ($d_filter) {
         # If we don't know how to check for disabled users, consider them all enabled.
