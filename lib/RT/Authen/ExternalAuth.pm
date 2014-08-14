@@ -216,7 +216,7 @@ For example, an LDAP mapping might look like:
     # Use the below LDAP source for both authentication, as well as user
     # information
     Set( $ExternalAuthPriority, ["My_LDAP"] );
-    Set( $ExternalAuthInfo,     ["My_LDAP"] );
+    Set( $ExternalInfoPriority, ["My_LDAP"] );
 
     # Users created from LDAP should be Privileged; this is a core RT
     # option.  Additionally, this is the 4.2 name for the option; for RT
