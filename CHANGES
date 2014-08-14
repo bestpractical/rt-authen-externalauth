@@ -1,3 +1,6 @@
+0.23 2014-08-14
+ - Packaging changes only
+
 0.22_01 2014-08-13
  - Move main configuration documentation into RT::Authen::ExternalAuth
  - Remove unnecessary $ExternalServiceUsesSSLorTLS option

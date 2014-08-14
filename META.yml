@@ -33,6 +33,6 @@ requires:
 resources:
   license: http://opensource.org/licenses/gpl-license.php
   repository: https://github.com/bestpractical/rt-authen-externalauth
-version: 0.22_01
+version: '0.23'
 x_module_install_rtx_version: 0.34_04
 x_requires_rt: 4.0.0
