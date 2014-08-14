@@ -317,7 +317,7 @@ sub DoAuth {
 
     my $no_info_check = 0;
     unless(defined($RT::ExternalInfoPriority)) {
-        $RT::Logger->debug("ExternalInfoPriority not defined. User information (including user enabled/disabled cannot be externally-sourced");
+        $RT::Logger->debug("ExternalInfoPriority not defined. User information (including user enabled/disabled) cannot be externally-sourced");
         $no_info_check = 1;
     }
 
