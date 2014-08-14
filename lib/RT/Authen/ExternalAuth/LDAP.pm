@@ -32,7 +32,7 @@ Provides the LDAP implementation for L<RT::Authen::ExternalAuth>.
             'group'                     =>  'GROUP_NAME',
             'group_attr'                =>  'GROUP_ATTR',
 
-            'tls'                       =>  0,
+            'tls'                       =>  { verify => "require", capath => "/path/to/ca.pem" },
 
             'net_ldap_args'             => [    version =>  3   ],
 
@@ -128,7 +128,14 @@ group_attr above? Optional; defaults to C<dn>.
 
 =item tls
 
-Should we try to use TLS to encrypt connections?
+Should we try to use TLS to encrypt connections?  Either a scalar, for
+simple enabling, or a hash of values to pass to L<Net::LDAP/start_tls>.
+By default, L<Net::LDAP> does B<no> certificate validation!  To validate
+certificates, pass:
+
+    tls => { verify => 'require',
+             cafile => "/etc/ssl/certs/ca.pem",  # Path CA file
+           },
 
 =item net_ldap_args
 
@@ -586,6 +593,7 @@ sub _GetBoundLdapObj {
     my $ldap_user       = $config->{'user'};
     my $ldap_pass       = $config->{'pass'};
     my $ldap_tls        = $config->{'tls'};
+    $ldap_tls = $ldap_tls ? {} : undef unless ref $ldap_tls;
     my $ldap_args       = $config->{'net_ldap_args'};
 
     my $ldap = new Net::LDAP($ldap_server, @$ldap_args);
@@ -599,7 +607,7 @@ sub _GetBoundLdapObj {
 
     if ($ldap_tls) {
         # Thanks to David Narayan for the fault tolerance bits
-        eval { $ldap->start_tls; };
+        eval { $ldap->start_tls( %{$ldap_tls} ); };
         if ($@) {
             $RT::Logger->critical(  (caller(0))[3],
                                     "Can't start TLS: ",
