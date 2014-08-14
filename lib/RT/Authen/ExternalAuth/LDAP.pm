@@ -147,7 +147,7 @@ sub GetAuth {
 
     my ($service, $username, $password) = @_;
 
-    my $config = $RT::ExternalSettings->{$service};
+    my $config = RT->Config->Get('ExternalSettings')->{$service};
     $RT::Logger->debug( "Trying external auth service:",$service);
 
     my $base            = $config->{'base'};
@@ -316,7 +316,7 @@ sub CanonicalizeUserInfo {
                   RealName     => undef);
 
     # Load the config
-    my $config = $RT::ExternalSettings->{$service};
+    my $config = RT->Config->Get('ExternalSettings')->{$service};
 
     # Figure out what's what
     my $base            = $config->{'base'};
@@ -435,7 +435,7 @@ sub CanonicalizeUserInfo {
 sub UserExists {
     my ($username,$service) = @_;
    $RT::Logger->debug("UserExists params:\nusername: $username , service: $service");
-    my $config              = $RT::ExternalSettings->{$service};
+    my $config              = RT->Config->Get('ExternalSettings')->{$service};
 
     my $base                = $config->{'base'};
     my $filter              = $config->{'filter'};
@@ -509,7 +509,7 @@ sub UserDisabled {
         return 0;
     }
 
-    my $config          = $RT::ExternalSettings->{$service};
+    my $config          = RT->Config->Get('ExternalSettings')->{$service};
     my $base            = $config->{'base'};
     my $filter          = $config->{'filter'};
     my $d_filter        = $config->{'d_filter'};

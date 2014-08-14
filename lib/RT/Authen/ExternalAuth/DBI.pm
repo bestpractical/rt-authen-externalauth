@@ -153,7 +153,7 @@ sub GetAuth {
 
     my ($service, $username, $password) = @_;
 
-    my $config = $RT::ExternalSettings->{$service};
+    my $config = RT->Config->Get('ExternalSettings')->{$service};
     $RT::Logger->debug( "Trying external auth service:",$service);
 
     my $db_table        = $config->{'table'};
@@ -301,7 +301,7 @@ sub CanonicalizeUserInfo {
                   RealName     => undef);
 
     # Load the config
-    my $config = $RT::ExternalSettings->{$service};
+    my $config = RT->Config->Get('ExternalSettings')->{$service};
 
     # Figure out what's what
     my $table      = $config->{'table'};
@@ -378,7 +378,7 @@ sub CanonicalizeUserInfo {
 sub UserExists {
 
     my ($username,$service) = @_;
-    my $config              = $RT::ExternalSettings->{$service};
+    my $config              = RT->Config->Get('ExternalSettings')->{$service};
     my $table                   = $config->{'table'};
     my $u_field             = $config->{'u_field'};
     my $query               = "SELECT $u_field FROM $table WHERE $u_field=?";
@@ -427,7 +427,7 @@ sub UserDisabled {
     }
 
     # Get the necessary config info
-    my $config              = $RT::ExternalSettings->{$service};
+    my $config              = RT->Config->Get('ExternalSettings')->{$service};
     my $table                   = $config->{'table'};
     my $u_field             = $config->{'u_field'};
     my $disable_field       = $config->{'d_field'};
@@ -558,7 +558,7 @@ sub GetCookieAuth {
     # Use this if you need to debug the DBI SQL process
     # DBI->trace(1,'/tmp/dbi.log');
 
-    my $dbh = _GetBoundDBIObj($RT::ExternalSettings->{$config->{'db_service_name'}});
+    my $dbh = _GetBoundDBIObj(RT->Config->Get('ExternalSettings')->{$config->{'db_service_name'}});
     my $query_result_arrayref = $dbh->selectall_arrayref($query,{},@params);
     $dbh->disconnect();
 

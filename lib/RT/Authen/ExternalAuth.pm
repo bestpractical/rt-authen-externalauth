@@ -294,59 +294,120 @@ use RT::Authen::ExternalAuth::DBI;
 
 use strict;
 
-# Ensure passwords are obfuscated on the System Configuration page
-$RT::Config::META{ExternalSettings}->{Obfuscate} = sub {
-    my ($config, $sources, $user) = @_;
+$RT::Config::META{ExternalSettings} = {
+    Obfuscate => sub {
+        # Ensure passwords are obfuscated on the System Configuration page
+        my ($config, $sources, $user) = @_;
 
-    # $user is only passed in versions of RT with 3c7db050
-    my $msg = 'Password not printed';
-       $msg = $user->loc($msg) if $user and $user->Id;
+        # $user is only passed in versions of RT with 3c7db050
+        my $msg = 'Password not printed';
+           $msg = $user->loc($msg) if $user and $user->Id;
 
-    for my $source (values %$sources) {
-        $source->{pass} = $msg;
-    }
-    return $sources;
+        for my $source (values %$sources) {
+            $source->{pass} = $msg;
+        }
+        return $sources;
+    },
+    PostLoadCheck => sub {
+        my $self = shift;
+        my $settings = shift || {};
+
+        my $remove = sub {
+            my ($service) = @_;
+            delete $settings->{$service};
+
+            $self->Set( 'ExternalAuthPriority',
+                        [ grep { $_ ne $service } @{ $self->Get('ExternalAuthPriority') || [] } ] );
+
+            $self->Set( 'ExternalInfoPriority',
+                        [ grep { $_ ne $service } @{ $self->Get('ExternalInfoPriority') || [] } ] );
+        };
+
+        for my $service (keys %$settings) {
+            my %conf = %{ $settings->{$service} };
+
+            if ($conf{type} !~ /^(ldap|db|cookie)$/) {
+                $RT::Logger->error(
+                    "Service '$service' in ExternalInfoPriority is not ldap, db, or cookie; removing."
+                );
+                $remove->($service);
+                next;
+            }
+
+            next unless $conf{type} eq 'db';
+
+            # Ensure people don't misconfigure DBI auth to point to RT's
+            # Users table; only check server/hostname/table, as
+            # user/pass might be different (root, for instance)
+            no warnings 'uninitialized';
+            next unless lc $conf{server} eq lc RT->Config->Get('DatabaseHost') and
+                        lc $conf{database} eq lc RT->Config->Get('DatabaseName') and
+                        lc $conf{table} eq 'users';
+
+            $RT::Logger->error(
+                "RT::Authen::ExternalAuth should _not_ be configured with a database auth service ".
+                "that points back to RT's internal Users table.  Removing the service '$service'! ".
+                "Please remove it from your config file."
+            );
+
+            $remove->($service);
+        }
+        $self->Set( 'ExternalSettings', $settings );
+    },
+};
+
+$RT::Config::META{ExternalAuthPriority} = {
+    PostLoadCheck => sub {
+        my $self = shift;
+        my @values = @{ shift || [] };
+        if (not @values) {
+            $self->Set( 'ExternalAuthPriority', \@values );
+            return;
+        }
+
+        my %settings = %{ $self->Get('ExternalSettings') };
+        for my $key (grep {not $settings{$_}} @values) {
+            $RT::Logger->error("Removing '$key' from ExternalAuthPriority, as it is not defined in ExternalSettings");
+        }
+        @values = grep {$settings{$_}} @values;
+        $self->Set( 'ExternalAuthPriority', \@values );
+    },
+};
+
+$RT::Config::META{ExternalInfoPriority} = {
+    PostLoadCheck => sub {
+        my $self = shift;
+        my @values = @{ shift || [] };
+        if (not @values) {
+            $RT::Logger->debug("ExternalInfoPriority not defined. User information (including user enabled/disabled) cannot be externally-sourced");
+            $self->Set( 'ExternalInfoPriority', \@values );
+            return;
+        }
+
+        my %settings = %{ $self->Get('ExternalSettings') };
+        for my $key (grep {not $settings{$_}} @values) {
+            $RT::Logger->error("Removing '$key' from ExternalInfoPriority, as it is not defined in ExternalSettings");
+        }
+        @values = grep {$settings{$_}} @values;
+
+        for my $key (grep {$settings{$_}{type} eq "cookie"} @values) {
+            $RT::Logger->error("Removing '$key' from ExternalInfoPriority, as cookie authentication cannot be used as an information source");
+        }
+        @values = grep {$settings{$_}{type} ne "cookie"} @values;
+
+        $self->Set( 'ExternalInfoPriority', \@values );
+    },
 };
 
 sub DoAuth {
     my ($session,$given_user,$given_pass) = @_;
 
-    unless(defined($RT::ExternalAuthPriority)) {
-        return (0, "ExternalAuthPriority not defined, please check your configuration file.");
-    }
+    # Get the prioritised list of external authentication services
+    my @auth_services = @{ RT->Config->Get('ExternalAuthPriority') };
+    my $settings = RT->Config->Get('ExternalSettings');
 
-    my $no_info_check = 0;
-    unless(defined($RT::ExternalInfoPriority)) {
-        $RT::Logger->debug("ExternalInfoPriority not defined. User information (including user enabled/disabled) cannot be externally-sourced");
-        $no_info_check = 1;
-    }
-
-    # Ensure people don't misconfigure DBI auth to point to RT's Users table
-    for my $service (keys %$RT::ExternalSettings) {
-        my %conf = %{ $RT::ExternalSettings->{$service} };
-        next unless $conf{type} eq 'db';
-
-        # user/pass might be different (root, for instance)
-        no warnings 'uninitialized';
-        next unless lc $conf{server} eq lc $RT::DatabaseHost and
-                    lc $conf{database} eq lc $RT::DatabaseName and
-                    lc $conf{table} eq 'users';
-
-        $RT::Logger->error(
-            "RT::Authen::ExternalAuth should _not_ be configured with a database auth service ".
-            "that points back to RT's internal Users table.  Removing the service '$service'! ".
-            "Please remove it from your config file."
-        );
-
-        # Remove it!
-        delete $RT::ExternalSettings->{$service};
-
-        @$RT::ExternalAuthPriority = grep { $_ ne $service } @$RT::ExternalAuthPriority
-            if $RT::ExternalAuthPriority;
-
-        @$RT::ExternalInfoPriority = grep { $_ ne $service } @$RT::ExternalInfoPriority
-            if $RT::ExternalInfoPriority;
-    }
+    return (0, "ExternalAuthPriority not defined, please check your configuration file.")
+        unless @auth_services;
 
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
     my $pass_bypass = 0;
@@ -355,11 +416,6 @@ sub DoAuth {
     # Should have checked if user is already logged in before calling this function,
     # but just in case, we'll check too.
     return (0, "User already logged in!") if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id);
-    # We don't have a logged in user. Let's try all our available methods in order.
-    # last if success, next if not.
-
-    # Get the prioritised list of external authentication services
-    my @auth_services = @$RT::ExternalAuthPriority;
 
     # For each of those services..
     foreach my $service (@auth_services) {
@@ -367,7 +423,7 @@ sub DoAuth {
         $pass_bypass = 0;
 
         # Get the full configuration for that service as a hashref
-        my $config = $RT::ExternalSettings->{$service};
+        my $config = $settings->{$service};
         $RT::Logger->debug( "Attempting to use external auth service:",
                             $service);
 
@@ -426,12 +482,13 @@ sub DoAuth {
 
         # Unless we have loaded a valid user with a UserID create one.
         unless ($session->{'CurrentUser'}->Id) {
-                        my $UserObj = RT::User->new($RT::SystemUser);
-                my ($val, $msg) =
-              $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
-                               Name   => $username,
-                               Gecos  => $username,
-                              );
+            my $UserObj = RT::User->new($RT::SystemUser);
+            my $create = RT->Config->Get('AutoCreate');
+            my ($val, $msg) =
+                $UserObj->Create(%{ref($create) ? $create : {}},
+                                 Name   => $username,
+                                 Gecos  => $username,
+                             );
             unless ($val) {
                 $RT::Logger->error( "Couldn't create user $username: $msg" );
                 next;
@@ -504,7 +561,7 @@ sub DoAuth {
         my $info_updated = 0;
         my $info_updated_msg = "User info not updated";
 
-        unless($no_info_check) {
+        if ( @{ RT->Config->Get('ExternalInfoPriority') } ) {
             # Note that UpdateUserInfo does not care how we authenticated the user
             # It will look up user info from whatever is specified in $RT::ExternalInfoPriority
             ($info_updated,$info_updated_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session->{'CurrentUser'}->Name);
@@ -554,7 +611,7 @@ sub UpdateUserInfo {
 
     my $user_disabled   = RT::Authen::ExternalAuth::UserDisabled($username);
 
-    my $UserObj = RT::User->new($RT::SystemUser);
+    my $UserObj = RT::User->new(RT->SystemUser);
     $UserObj->Load($username);
 
     # If user is disabled, set the RT::Principal to disabled and return out of the function.
@@ -629,7 +686,7 @@ sub GetAuth {
     my $success = 0;
 
     # Get the full configuration for that service as a hashref
-    my $config = $RT::ExternalSettings->{$service};
+    my $config = RT->Config->Get('ExternalSettings')->{$service};
 
     # And then act accordingly depending on what type of service it is.
     # Right now, there is only code for DBI and LDAP non-SSO services
@@ -639,8 +696,6 @@ sub GetAuth {
     } elsif ($config->{'type'} eq 'ldap') {
         $success = RT::Authen::ExternalAuth::LDAP::GetAuth($service,$username,$password);
         $RT::Logger->debug("LDAP password validation result:",$success);
-    } else {
-        $RT::Logger->error("Invalid service type for GetAuth:",$service);
     }
 
     return $success;
@@ -656,7 +711,7 @@ sub UserExists {
     my $success = 0;
 
     # Get the full configuration for that service as a hashref
-    my $config = $RT::ExternalSettings->{$service};
+    my $config = RT->Config->Get('ExternalSettings')->{$service};
 
     # And then act accordingly depending on what type of service it is.
     # Right now, there is only code for DBI and LDAP non-SSO services
@@ -664,8 +719,6 @@ sub UserExists {
         $success = RT::Authen::ExternalAuth::DBI::UserExists($username,$service);
     } elsif ($config->{'type'} eq 'ldap') {
         $success = RT::Authen::ExternalAuth::LDAP::UserExists($username,$service);
-    } else {
-        $RT::Logger->debug("Invalid service type for UserExists:",$service);
     }
 
     return $success;
@@ -676,7 +729,7 @@ sub UserDisabled {
     my $username = shift;
     my $user_disabled = 0;
 
-    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
+    my @info_services = @{ RT->Config->Get('ExternalInfoPriority') };
 
     # For each named service in the list
     # Check to see if the user is found in the external service
@@ -686,15 +739,7 @@ sub UserDisabled {
     foreach my $service (@info_services) {
 
         # Get the external config for this service as a hashref
-        my $config = $RT::ExternalSettings->{$service};
-
-        # If the config doesn't exist, don't bother doing anything, skip to next in list.
-        unless(defined($config)) {
-            $RT::Logger->debug("You haven't defined a configuration for the service named \"",
-                                $service,
-                                "\" so I'm not going to try to get user information from it. Skipping...");
-            next;
-        }
+        my $config = RT->Config->Get('ExternalSettings')->{$service};
 
         # If it's a DBI config:
         if ($config->{'type'} eq 'db') {
@@ -721,14 +766,6 @@ sub UserDisabled {
             }
             $user_disabled = RT::Authen::ExternalAuth::LDAP::UserDisabled($username,$service);
 
-        } elsif ($config->{'type'} eq 'cookie') {
-            RT::Logger->error("You cannot use SSO Cookies as an information service.");
-            next;
-        } else {
-            # The type of external service doesn't currently have any methods associated with it. Or it's a typo.
-            RT::Logger->error("Invalid type specification for config %config->{'name'}");
-            # Drop out to next service in list
-            next;
         }
 
     }
@@ -758,7 +795,7 @@ sub CanonicalizeUserInfo {
                             sort(keys(%$args))));
 
     # Get the list of defined external services
-    my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : undef;
+    my @info_services = @{ RT->Config->Get('ExternalInfoPriority') };
     # For each external service...
     foreach my $service (@info_services) {
 
@@ -766,12 +803,7 @@ sub CanonicalizeUserInfo {
                             $service);
 
         # Get the config for the service so that we know what attrs we can canonicalize
-        my $config = $RT::ExternalSettings->{$service};
-
-        if($config->{'type'} eq 'cookie'){
-            $RT::Logger->debug("You cannot use SSO cookies as an information service!");
-            next;
-        }
+        my $config = RT->Config->Get('ExternalSettings')->{$service};
 
         # For each attr we've been told to canonicalize in the match list
         foreach my $rt_attr (@{$config->{'attr_match_list'}}) {
@@ -814,11 +846,6 @@ sub CanonicalizeUserInfo {
                 ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo($service,$key,$value);
             } elsif ($config->{'type'} eq 'db') {
                 ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo($service,$key,$value);
-            } else {
-                $RT::Logger->debug( (caller(0))[3],
-                                    "does not consider",
-                                    $service,
-                                    "a valid information service");
             }
 
             # Don't Check any more attributes
@@ -848,7 +875,7 @@ sub CanonicalizeUserInfo {
     ### return true or rejects the user for creation. This should be
     ### a different config var (CreateUncanonicalizedUsers) and
     ### should be honored in RT::User::Create()
-    return($found || $RT::AutoCreateNonExternalUsers);
+    return($found || RT->Config->Get('AutoCreateNonExternalUsers'));
 
 }
 
