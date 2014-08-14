@@ -1,7 +1,4 @@
 <%init>
-
-use RT::Authen::ExternalAuth;
-
 my ($val,$msg);
 unless($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
     # It's important to nab the next page from the session before we
