@@ -152,13 +152,13 @@ Otherwise, they will be considered enabled.
 sub GetAuth {
 
     my ($service, $username, $password) = @_;
-    
+
     my $config = $RT::ExternalSettings->{$service};
     $RT::Logger->debug( "Trying external auth service:",$service);
 
     my $db_table        = $config->{'table'};
     my $db_u_field      = $config->{'u_field'};
-    my $db_p_field 	    = $config->{'p_field'};
+    my $db_p_field          = $config->{'p_field'};
     my $db_p_check      = $config->{'p_check'};
     my $db_p_enc_pkg    = $config->{'p_enc_pkg'};
     my $db_p_enc_sub    = $config->{'p_enc_sub'};
@@ -167,20 +167,20 @@ sub GetAuth {
     # Set SQL query and bind parameters
     my $query = "SELECT $db_u_field,$db_p_field FROM $db_table WHERE $db_u_field=?";
     my @params = ($username);
-    
+
     # Uncomment this to trace basic DBI information and drop it in a log for debugging
     # DBI->trace(1,'/tmp/dbi.log');
 
     # Get DBI handle object (DBH), do SQL query, kill DBH
     my $dbh = _GetBoundDBIObj($config);
     return 0 unless $dbh;
-    
+
     my $results_hashref = $dbh->selectall_hashref($query,$db_u_field,{},@params);
     $dbh->disconnect();
 
     my $num_users_returned = scalar keys %$results_hashref;
     if($num_users_returned != 1) { # FAIL
-        # FAIL because more than one user returned. Users MUST be unique! 
+        # FAIL because more than one user returned. Users MUST be unique!
         if ((scalar keys %$results_hashref) > 1) {
             $RT::Logger->info(  $service,
                                 "AUTH FAILED",
@@ -188,7 +188,7 @@ sub GetAuth {
                                 "More than one user with that username!");
         }
 
-        # FAIL because no users returned. Users MUST exist! 
+        # FAIL because no users returned. Users MUST exist!
         if ((scalar keys %$results_hashref) < 1) {
             $RT::Logger->info(  $service,
                                 "AUTH FAILED",
@@ -196,12 +196,12 @@ sub GetAuth {
                                 "User not found in database!");
         }
 
-	    # Drop out to next external authentication service
-	    return 0;
+            # Drop out to next external authentication service
+            return 0;
     }
-    
+
     # Get the user's password from the database query result
-    my $pass_from_db = $results_hashref->{$username}->{$db_p_field};        
+    my $pass_from_db = $results_hashref->{$username}->{$db_p_field};
 
     if ( $db_p_check ) {
         unless ( ref $db_p_check eq 'CODE' ) {
@@ -222,10 +222,10 @@ sub GetAuth {
                 "$service AUTH FAILED for $username: Password Incorrect (via p_check)"
             );
         } else {
-            $RT::Logger->info(  (caller(0))[3], 
+            $RT::Logger->info(  (caller(0))[3],
                                 "External Auth OK (",
                                 $service,
-                                "):", 
+                                "):",
                                 $username);
         }
         return $check;
@@ -240,9 +240,9 @@ sub GetAuth {
     # Use config info to auto-load the perl package needed for password encryption
     # I know it uses a string eval - but I don't think there's a better way to do this
     # Jump to next external authentication service on failure
-    eval "require $db_p_enc_pkg" or 
+    eval "require $db_p_enc_pkg" or
         $RT::Logger->error("AUTH FAILED, Couldn't Load Password Encryption Package. Error: $@") && return 0;
-    
+
     my $encrypt = $db_p_enc_pkg->can($db_p_enc_sub);
     if (defined($encrypt)) {
         # If the package given can perform the subroutine given, then use it to compare the
@@ -252,16 +252,16 @@ sub GetAuth {
             $RT::Logger->debug("Using salt:",$db_p_salt);
             if(${encrypt}->($password,$db_p_salt) ne $pass_from_db){
                 $RT::Logger->info(  $service,
-                                    "AUTH FAILED", 
-                                    $username, 
+                                    "AUTH FAILED",
+                                    $username,
                                     "Password Incorrect");
                 return 0;
             }
         } else {
             if(${encrypt}->($password) ne $pass_from_db){
                 $RT::Logger->info(  $service,
-                                    "AUTH FAILED", 
-                                    $username, 
+                                    "AUTH FAILED",
+                                    $username,
                                     "Password Incorrect");
                 return 0;
             }
@@ -278,31 +278,31 @@ sub GetAuth {
                             ")");
             return 0;
     }
-    
+
     # Any other checks you want to add? Add them here.
 
     # If we've survived to this point, we're good.
-    $RT::Logger->info(  (caller(0))[3], 
+    $RT::Logger->info(  (caller(0))[3],
                         "External Auth OK (",
                         $service,
-                        "):", 
+                        "):",
                         $username);
-    
-    return 1;   
+
+    return 1;
 }
 
 sub CanonicalizeUserInfo {
-    
+
     my ($service, $key, $value) = @_;
 
     my $found = 0;
     my %params = (Name         => undef,
                   EmailAddress => undef,
                   RealName     => undef);
-    
+
     # Load the config
     my $config = $RT::ExternalSettings->{$service};
-    
+
     # Figure out what's what
     my $table      = $config->{'table'};
 
@@ -319,7 +319,7 @@ sub CanonicalizeUserInfo {
         # Drop out to the next external information service
         return ($found, %params);
     }
-    
+
     # "where" refers to WHERE section of SQL query
     my ($where_key,$where_value) = ("@{[ $key ]}",$value);
 
@@ -339,10 +339,10 @@ sub CanonicalizeUserInfo {
     if ((scalar keys %$results_hashref) != 1) {
         # If returned users <> 1, we have no single unique user, so prepare to die
         my $death_msg;
-        
-	    if ((scalar keys %$results_hashref) == 0) {
+
+            if ((scalar keys %$results_hashref) == 0) {
             # If no user...
-	        $death_msg = "No User Found in External Database!";
+                $death_msg = "No User Found in External Database!";
         } else {
             # If more than one user...
             $death_msg = "More than one user found in External Database with that unique identifier!";
@@ -354,47 +354,47 @@ sub CanonicalizeUserInfo {
                             "Key: $key",
                             "Value: $value",
                             $death_msg);
-        
+
         # $found remains as 0
-        
+
         # Drop out to next external information service
         return ($found, %params);
     }
 
-    # We haven't dropped out, so DB search must have succeeded with 
+    # We haven't dropped out, so DB search must have succeeded with
     # exactly 1 result. Get the result and set $found to 1
     my $result = $results_hashref->{$value};
- 
+
     # Use the result to populate %params for every key we're given in the config
     foreach my $key (keys(%{$config->{'attr_map'}})) {
         $params{$key} = ($result->{$config->{'attr_map'}->{$key}})[0];
     }
-    
+
     $found = 1;
-  
+
     return ($found, %params);
 }
 
 sub UserExists {
-    
+
     my ($username,$service) = @_;
     my $config              = $RT::ExternalSettings->{$service};
-    my $table    	        = $config->{'table'};
-    my $u_field	            = $config->{'u_field'};
+    my $table                   = $config->{'table'};
+    my $u_field             = $config->{'u_field'};
     my $query               = "SELECT $u_field FROM $table WHERE $u_field=?";
     my @bind_params         = ($username);
 
     # Uncomment this to do a basic trace on DBI information and log it
     # DBI->trace(1,'/tmp/dbi.log');
-    
+
     # Get DBI Object, do the query, disconnect
     my $dbh = _GetBoundDBIObj($config);
     my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
     $dbh->disconnect();
 
     my $num_of_results = scalar keys %$results_hashref;
-        
-    if ($num_of_results > 1) { 
+
+    if ($num_of_results > 1) {
         # If more than one result returned, die because we the username field should be unique!
         $RT::Logger->debug( "Disable Check Failed :: (",
                             $service,
@@ -402,34 +402,34 @@ sub UserExists {
                             $username,
                             "More than one user with that username!");
         return 0;
-    } elsif ($num_of_results < 1) { 
+    } elsif ($num_of_results < 1) {
         # If 0 or negative integer, no user found or major failure
         $RT::Logger->debug( "Disable Check Failed :: (",
                             $service,
                             ")",
                             $username,
-                            "User not found");   
-        return 0; 
+                            "User not found");
+        return 0;
     }
-    
+
     # Number of results is exactly one, so we found the user we were looking for
-    return 1;            
+    return 1;
 }
 
 sub UserDisabled {
 
     my ($username,$service) = @_;
-    
+
     # FIRST, check that the user exists in the DBI service
     unless(UserExists($username,$service)) {
         $RT::Logger->debug("User (",$username,") doesn't exist! - Assuming not disabled for the purposes of disable checking");
         return 0;
     }
-    
+
     # Get the necessary config info
     my $config              = $RT::ExternalSettings->{$service};
-    my $table    	        = $config->{'table'};
-    my $u_field	            = $config->{'u_field'};
+    my $table                   = $config->{'table'};
+    my $u_field             = $config->{'u_field'};
     my $disable_field       = $config->{'d_field'};
     my $disable_values_list = $config->{'d_values'};
 
@@ -439,22 +439,22 @@ sub UserDisabled {
                             $service,
                             "), so considering all users enabled");
         return 0;
-    } 
-    
+    }
+
     my $query = "SELECT $u_field,$disable_field FROM $table WHERE $u_field=?";
     my @bind_params = ($username);
 
     # Uncomment this to do a basic trace on DBI information and log it
     # DBI->trace(1,'/tmp/dbi.log');
-    
+
     # Get DBI Object, do the query, disconnect
     my $dbh = _GetBoundDBIObj($config);
     my $results_hashref = $dbh->selectall_hashref($query,$u_field,{},@bind_params);
     $dbh->disconnect();
 
     my $num_of_results = scalar keys %$results_hashref;
-        
-    if ($num_of_results > 1) { 
+
+    if ($num_of_results > 1) {
         # If more than one result returned, die because we the username field should be unique!
         $RT::Logger->debug( "Disable Check Failed :: (",
                             $service,
@@ -463,33 +463,33 @@ sub UserDisabled {
                             "More than one user with that username! - Assuming not disabled");
         # Drop out to next service for an info check
         return 0;
-    } elsif ($num_of_results < 1) { 
+    } elsif ($num_of_results < 1) {
         # If 0 or negative integer, no user found or major failure
         $RT::Logger->debug( "Disable Check Failed :: (",
                             $service,
                             ")",
                             $username,
-                            "User not found - Assuming not disabled");   
+                            "User not found - Assuming not disabled");
         # Drop out to next service for an info check
-        return 0;             
-    } else { 
+        return 0;
+    } else {
         # otherwise all should be well
-        
+
         # $user_db_disable_value = The value for "disabled" returned from the DB
         my $user_db_disable_value = $results_hashref->{$username}->{$disable_field};
-        
+
         # For each of the values in the (list of values that we consider to mean the user is disabled)..
         foreach my $disable_value (@{$disable_values_list}){
-            $RT::Logger->debug( "DB Disable Check:", 
+            $RT::Logger->debug( "DB Disable Check:",
                                 "User's Val is $user_db_disable_value,",
                                 "Checking against: $disable_value");
-            
+
             # If the value from the DB matches a value from the list, the user is disabled.
             if ($user_db_disable_value eq $disable_value) {
                 return 1;
             }
         }
-        
+
         # If we've not returned yet, the user can't be disabled
         return 0;
     }
@@ -500,8 +500,8 @@ sub UserDisabled {
 sub GetCookieAuth {
 
     $RT::Logger->debug( (caller(0))[3],
-	                "Checking Browser Cookies for an Authenticated User");
-			     
+                        "Checking Browser Cookies for an Authenticated User");
+
     # Get our cookie and database info...
     my $config = shift;
 
@@ -594,8 +594,8 @@ sub GetCookieAuth {
 # {{{ sub _GetBoundDBIObj
 
 sub _GetBoundDBIObj {
-    
-    # Config as hashref. 
+
+    # Config as hashref.
     my $config = shift;
 
     # Extract the relevant information from the config.
@@ -619,8 +619,8 @@ sub _GetBoundDBIObj {
     my $dbh = DBI->connect($dsn, $db_user, $db_pass,{RaiseError => 1, AutoCommit => 0 })
             or die $DBI::errstr;
 
-    # If we didn't die, return the DBI object handle 
-    # and hope it's treated sensibly and correctly 
+    # If we didn't die, return the DBI object handle
+    # and hope it's treated sensibly and correctly
     # destroyed by the calling code
     return $dbh;
 }

@@ -357,14 +357,14 @@ sub DoAuth {
     return (0, "User already logged in!") if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id);
     # We don't have a logged in user. Let's try all our available methods in order.
     # last if success, next if not.
-    
+
     # Get the prioritised list of external authentication services
     my @auth_services = @$RT::ExternalAuthPriority;
-    
+
     # For each of those services..
     foreach my $service (@auth_services) {
 
-	$pass_bypass = 0;
+        $pass_bypass = 0;
 
         # Get the full configuration for that service as a hashref
         my $config = $RT::ExternalSettings->{$service};
@@ -374,42 +374,42 @@ sub DoAuth {
         # $username will be the final username we decide to check
         # This will not necessarily be $given_user
         my $username = undef;
-        
+
         #############################################################
         ####################### SSO Check ###########################
         #############################################################
-        if ($config->{'type'} eq 'cookie') {    
+        if ($config->{'type'} eq 'cookie') {
             # Currently, Cookie authentication is our only SSO method
             $username = RT::Authen::ExternalAuth::DBI::GetCookieAuth($config);
         }
         #############################################################
-        
+
         # If $username is defined, we have a good SSO $username and can
         # safely bypass the password checking later on; primarily because
         # it's VERY unlikely we even have a password to check if an SSO succeeded.
         $pass_bypass = 0;
-	if(defined($username)) {
-	    $RT::Logger->debug("Pass not going to be checked, attempting SSO");
+        if(defined($username)) {
+            $RT::Logger->debug("Pass not going to be checked, attempting SSO");
             $pass_bypass = 1;
         } else {
 
-	    # SSO failed and no $user was passed for a login attempt
-	    # We only don't return here because the next iteration could be an SSO attempt
-	    unless(defined($given_user)) {
-	    	$RT::Logger->debug("SSO Failed and no user to test with. Nexting");
-		next;
-	    }
+            # SSO failed and no $user was passed for a login attempt
+            # We only don't return here because the next iteration could be an SSO attempt
+            unless(defined($given_user)) {
+                $RT::Logger->debug("SSO Failed and no user to test with. Nexting");
+                next;
+            }
 
             # We don't have an SSO login, so we will be using the credentials given
             # on RT's login page to do our authentication.
             $username = $given_user;
-    
+
             # Don't continue unless the service works.
-	    # next unless RT::Authen::ExternalAuth::TestConnection($config);
+            # next unless RT::Authen::ExternalAuth::TestConnection($config);
 
             # Don't continue unless the $username exists in the external service
 
-	    $RT::Logger->debug("Calling UserExists with \$username ($username) and \$service ($service)");
+            $RT::Logger->debug("Calling UserExists with \$username ($username) and \$service ($service)");
             next unless RT::Authen::ExternalAuth::UserExists($username, $service);
         }
 
@@ -426,8 +426,8 @@ sub DoAuth {
 
         # Unless we have loaded a valid user with a UserID create one.
         unless ($session->{'CurrentUser'}->Id) {
-			my $UserObj = RT::User->new($RT::SystemUser);
-        	my ($val, $msg) = 
+                        my $UserObj = RT::User->new($RT::SystemUser);
+                my ($val, $msg) =
               $UserObj->Create(%{ref($RT::AutoCreate) ? $RT::AutoCreate : {}},
                                Name   => $username,
                                Gecos  => $username,
@@ -441,13 +441,13 @@ sub DoAuth {
                                 "(",
                                 $UserObj->Id,
                                 ")");
-            
+
             $RT::Logger->debug("Loading new user (",
-            					$username,
-            					") into current session");
+                                                $username,
+                                                ") into current session");
             $session->{'CurrentUser'}->Load($username);
-        } 
-        
+        }
+
         ####################################################################
         ########## Authentication ##########################################
         ####################################################################
@@ -455,21 +455,21 @@ sub DoAuth {
         # succeeded. If we didn't then, success is determined by a password
         # test.
         $success = 0;
-	if($pass_bypass) {
+        if($pass_bypass) {
             $RT::Logger->debug("Password check bypassed due to SSO method being in use");
             $success = 1;
         } else {
             $RT::Logger->debug("Password validation required for service - Executing...");
             $success = RT::Authen::ExternalAuth::GetAuth($service,$username,$given_pass);
         }
-       
+
         $RT::Logger->debug("Password Validation Check Result: ",$success);
 
         # If the password check succeeded then this is our authoritative service
         # and we proceed to user information update and login.
         last if $success;
     }
-    
+
     # If we got here and don't have a user loaded we must have failed to
     # get a full, valid user from an authoritative external source.
     unless ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
@@ -479,37 +479,37 @@ sub DoAuth {
 
     unless($success) {
         $session->{'CurrentUser'} = RT::CurrentUser->new;
-	return (0, "Password Invalid");
+        return (0, "Password Invalid");
     }
-    
+
     # Otherwise we succeeded.
     $RT::Logger->debug("Authentication successful. Now updating user information and attempting login.");
-        
+
     ####################################################################################################
     ############################### The following is auth-method agnostic ##############################
     ####################################################################################################
-    
+
     # If we STILL have a completely valid RT user to play with...
     # and therefore password has been validated...
     if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
-        
+
         # Even if we have JUST created the user in RT, we are going to
         # reload their information from an external source. This allows us
         # to be sure that the user the cookie gave us really does exist in
-        # the database, but more importantly, UpdateFromExternal will check 
-        # whether the user is disabled or not which we have not been able to 
+        # the database, but more importantly, UpdateFromExternal will check
+        # whether the user is disabled or not which we have not been able to
         # do during auto-create
 
-	# These are not currently used, but may be used in the future.
-	my $info_updated = 0;
-	my $info_updated_msg = "User info not updated";
+        # These are not currently used, but may be used in the future.
+        my $info_updated = 0;
+        my $info_updated_msg = "User info not updated";
 
         unless($no_info_check) {
             # Note that UpdateUserInfo does not care how we authenticated the user
             # It will look up user info from whatever is specified in $RT::ExternalInfoPriority
             ($info_updated,$info_updated_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session->{'CurrentUser'}->Name);
         }
-                
+
         # Now that we definitely have up-to-date user information,
         # if the user is disabled, kick them out. Now!
         if ($session->{'CurrentUser'}->UserObj->Disabled) {
@@ -517,12 +517,12 @@ sub DoAuth {
             return (0, "User account disabled, login denied");
         }
     }
-    
+
     # If we **STILL** have a full user and the session hasn't already been deleted
     # This If/Else is logically unnecessary, but it doesn't hurt to leave it here
     # just in case. Especially to be a double-check to future modifications.
     if ($session->{'CurrentUser'} && $session->{'CurrentUser'}->Id) {
-            
+
             $RT::Logger->info(  "Successful login for",
                                 $session->{'CurrentUser'}->Name,
                                 "from",
@@ -537,10 +537,10 @@ sub DoAuth {
             # Make SURE the session is purged to an empty user.
             $session->{'CurrentUser'} = RT::CurrentUser->new;
             return (0, "Failed to authenticate externally");
-            # This will cause autohandler to request IsPassword 
+            # This will cause autohandler to request IsPassword
             # which will in turn call IsExternalPassword
     }
-    
+
     return (1, "Successful login");
 }
 
@@ -552,18 +552,18 @@ sub UpdateUserInfo {
     my $updated         = 0;
     my $msg             = "User NOT updated";
 
-    my $user_disabled 	= RT::Authen::ExternalAuth::UserDisabled($username);
+    my $user_disabled   = RT::Authen::ExternalAuth::UserDisabled($username);
 
     my $UserObj = RT::User->new($RT::SystemUser);
-    $UserObj->Load($username);        
+    $UserObj->Load($username);
 
     # If user is disabled, set the RT::Principal to disabled and return out of the function.
     # I think it's a waste of time and energy to update a user's information if they are disabled
-    # and it could be a security risk if they've updated their external information with some 
-    # carefully concocted code to try to break RT - worst case scenario, but they have been 
+    # and it could be a security risk if they've updated their external information with some
+    # carefully concocted code to try to break RT - worst case scenario, but they have been
     # denied access after all, don't take any chances.
-     
-    # If someone gives me a good enough reason to do it, 
+
+    # If someone gives me a good enough reason to do it,
     # then I'll update all the info for disabled users
 
     if ($user_disabled) {
@@ -573,14 +573,14 @@ sub UpdateUserInfo {
             # Log what has happened
             $RT::Logger->info("User marked as DISABLED (",
                                 $username,
-                                ") per External Service", 
+                                ") per External Service",
                                 "($val, $message)\n");
             $msg = "User Disabled";
         }
 
         return ($updated, $msg);
-    }    
-        
+    }
+
     # Make sure principal is not disabled in RT
     if ( $UserObj->Disabled ) {
         my ($val, $message) = $UserObj->SetDisabled(0);
@@ -623,27 +623,27 @@ sub GetAuth {
 
     # Request a username/password check from the specified service
     # This is only valid for non-SSO services.
-    
+
     my ($service,$username,$password) = @_;
-    
+
     my $success = 0;
-    
+
     # Get the full configuration for that service as a hashref
     my $config = $RT::ExternalSettings->{$service};
-    
+
     # And then act accordingly depending on what type of service it is.
     # Right now, there is only code for DBI and LDAP non-SSO services
-    if ($config->{'type'} eq 'db') {    
+    if ($config->{'type'} eq 'db') {
         $success = RT::Authen::ExternalAuth::DBI::GetAuth($service,$username,$password);
-	$RT::Logger->debug("DBI password validation result:",$success);
+        $RT::Logger->debug("DBI password validation result:",$success);
     } elsif ($config->{'type'} eq 'ldap') {
         $success = RT::Authen::ExternalAuth::LDAP::GetAuth($service,$username,$password);
-	$RT::Logger->debug("LDAP password validation result:",$success);
+        $RT::Logger->debug("LDAP password validation result:",$success);
     } else {
         $RT::Logger->error("Invalid service type for GetAuth:",$service);
     }
-    
-    return $success; 
+
+    return $success;
 }
 
 sub UserExists {
@@ -672,10 +672,10 @@ sub UserExists {
 }
 
 sub UserDisabled {
-    
+
     my $username = shift;
     my $user_disabled = 0;
-    
+
     my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : ();
 
     # For each named service in the list
@@ -684,10 +684,10 @@ sub UserDisabled {
     # If found, check to see if user is considered disabled by the service
     # Then update the user's info in RT and return
     foreach my $service (@info_services) {
-        
-        # Get the external config for this service as a hashref        
+
+        # Get the external config for this service as a hashref
         my $config = $RT::ExternalSettings->{$service};
-        
+
         # If the config doesn't exist, don't bother doing anything, skip to next in list.
         unless(defined($config)) {
             $RT::Logger->debug("You haven't defined a configuration for the service named \"",
@@ -695,10 +695,10 @@ sub UserDisabled {
                                 "\" so I'm not going to try to get user information from it. Skipping...");
             next;
         }
-        
+
         # If it's a DBI config:
         if ($config->{'type'} eq 'db') {
-            
+
             unless(RT::Authen::ExternalAuth::DBI::UserExists($username,$service)) {
                 $RT::Logger->debug("User (",
                                     $username,
@@ -708,9 +708,9 @@ sub UserDisabled {
                 next;
             }
             $user_disabled = RT::Authen::ExternalAuth::DBI::UserDisabled($username,$service);
-            
+
         } elsif ($config->{'type'} eq 'ldap') {
-            
+
             unless(RT::Authen::ExternalAuth::LDAP::UserExists($username,$service)) {
                 $RT::Logger->debug("User (",
                                     $username,
@@ -720,7 +720,7 @@ sub UserDisabled {
                 next;
             }
             $user_disabled = RT::Authen::ExternalAuth::LDAP::UserDisabled($username,$service);
-                    
+
         } elsif ($config->{'type'} eq 'cookie') {
             RT::Logger->error("You cannot use SSO Cookies as an information service.");
             next;
@@ -730,30 +730,30 @@ sub UserDisabled {
             # Drop out to next service in list
             next;
         }
-    
+
     }
     return $user_disabled;
 }
 
 sub CanonicalizeUserInfo {
-    
+
     # Careful, this $args hashref was given to RT::User::CanonicalizeUserInfo and
     # then transparently passed on to this function. The whole purpose is to update
     # the original hash as whatever passed it to RT::User is expecting to continue its
     # code with an update args hash.
-    
+
     my $UserObj = shift;
     my $args    = shift;
-    
+
     my $found   = 0;
     my %params  = (Name         => undef,
                   EmailAddress => undef,
                   RealName     => undef);
-    
-    $RT::Logger->debug( (caller(0))[3], 
-                        "called by", 
-                        caller, 
-                        "with:", 
+
+    $RT::Logger->debug( (caller(0))[3],
+                        "called by",
+                        caller,
+                        "with:",
                         join(", ", map {sprintf("%s: %s", $_, ($args->{$_} ? $args->{$_} : ''))}
                             sort(keys(%$args))));
 
@@ -761,18 +761,18 @@ sub CanonicalizeUserInfo {
     my @info_services = $RT::ExternalInfoPriority ? @{$RT::ExternalInfoPriority} : undef;
     # For each external service...
     foreach my $service (@info_services) {
-        
+
         $RT::Logger->debug( "Attempting to get user info using this external service:",
                             $service);
-        
+
         # Get the config for the service so that we know what attrs we can canonicalize
         my $config = $RT::ExternalSettings->{$service};
-        
+
         if($config->{'type'} eq 'cookie'){
             $RT::Logger->debug("You cannot use SSO cookies as an information service!");
             next;
-        }  
-        
+        }
+
         # For each attr we've been told to canonicalize in the match list
         foreach my $rt_attr (@{$config->{'attr_match_list'}}) {
             # Jump to the next attr in $args if this one isn't in the attr_match_list
@@ -785,11 +785,11 @@ sub CanonicalizeUserInfo {
                                     ")");
                 next;
             }
-                               
-            # Else, use it as a canonicalization key and lookup the user info    
+
+            # Else, use it as a canonicalization key and lookup the user info
             my $key = $config->{'attr_map'}->{$rt_attr};
             my $value = $args->{$rt_attr};
-            
+
             # Check to see that the key being asked for is defined in the config's attr_map
             my $valid = 0;
             my ($attr_key, $attr_value);
@@ -805,12 +805,12 @@ sub CanonicalizeUserInfo {
                                     ")");
                 next;
             }
-            
-            # Use an if/elsif structure to do a lookup with any custom code needed 
+
+            # Use an if/elsif structure to do a lookup with any custom code needed
             # for any given type of external service, or die if no code exists for
             # the service requested.
-            
-            if($config->{'type'} eq 'ldap'){    
+
+            if($config->{'type'} eq 'ldap'){
                 ($found, %params) = RT::Authen::ExternalAuth::LDAP::CanonicalizeUserInfo($service,$key,$value);
             } elsif ($config->{'type'} eq 'db') {
                 ($found, %params) = RT::Authen::ExternalAuth::DBI::CanonicalizeUserInfo($service,$key,$value);
@@ -820,36 +820,36 @@ sub CanonicalizeUserInfo {
                                     $service,
                                     "a valid information service");
             }
-       
+
             # Don't Check any more attributes
             last if $found;
         }
         # Don't Check any more services
         last if $found;
     }
-    
-    # If found, Canonicalize Email Address and 
+
+    # If found, Canonicalize Email Address and
     # update the args hash that we were given the hashref for
     if ($found) {
         # It's important that we always have a canonical email address
         if ($params{'EmailAddress'}) {
             $params{'EmailAddress'} = $UserObj->CanonicalizeEmailAddress($params{'EmailAddress'});
-        } 
+        }
         %$args = (%$args, %params);
     }
 
-    $RT::Logger->info(  (caller(0))[3], 
-                        "returning", 
+    $RT::Logger->info(  (caller(0))[3],
+                        "returning",
                         join(", ", map {sprintf("%s: %s", $_, ($args->{$_} ? $args->{$_} : ''))}
                             sort(keys(%$args))));
 
     ### HACK: The config var below is to overcome the (IMO) bug in
     ### RT::User::Create() which expects this function to always
     ### return true or rejects the user for creation. This should be
-    ### a different config var (CreateUncanonicalizedUsers) and 
+    ### a different config var (CreateUncanonicalizedUsers) and
     ### should be honored in RT::User::Create()
     return($found || $RT::AutoCreateNonExternalUsers);
-   
+
 }
 
 {
