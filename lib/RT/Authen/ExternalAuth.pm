@@ -410,7 +410,6 @@ sub DoAuth {
         unless @auth_services;
 
     # This may be used by single sign-on (SSO) authentication mechanisms for bypassing a password check.
-    my $pass_bypass = 0;
     my $success = 0;
 
     # Should have checked if user is already logged in before calling this function,
@@ -419,8 +418,6 @@ sub DoAuth {
 
     # For each of those services..
     foreach my $service (@auth_services) {
-
-        $pass_bypass = 0;
 
         # Get the full configuration for that service as a hashref
         my $config = $settings->{$service};
@@ -443,7 +440,7 @@ sub DoAuth {
         # If $username is defined, we have a good SSO $username and can
         # safely bypass the password checking later on; primarily because
         # it's VERY unlikely we even have a password to check if an SSO succeeded.
-        $pass_bypass = 0;
+        my $pass_bypass = 0;
         if(defined($username)) {
             $RT::Logger->debug("Pass not going to be checked, attempting SSO");
             $pass_bypass = 1;
