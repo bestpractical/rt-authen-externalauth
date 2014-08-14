@@ -33,7 +33,6 @@ Provides the LDAP implementation for L<RT::Authen::ExternalAuth>.
             'group_attr'                =>  'GROUP_ATTR',
 
             'tls'                       =>  0,
-            'ssl_version'               =>  3,
 
             'net_ldap_args'             => [    version =>  3   ],
 
@@ -130,10 +129,6 @@ group_attr above? Optional; defaults to C<dn>.
 =item tls
 
 Should we try to use TLS to encrypt connections?
-
-=item ssl_version
-
-SSL Version to provide to Net::SSLeay *if* using SSL.
 
 =item net_ldap_args
 
@@ -591,7 +586,6 @@ sub _GetBoundLdapObj {
     my $ldap_user       = $config->{'user'};
     my $ldap_pass       = $config->{'pass'};
     my $ldap_tls        = $config->{'tls'};
-    my $ldap_ssl_ver    = $config->{'ssl_version'};
     my $ldap_args       = $config->{'net_ldap_args'};
 
     my $ldap = new Net::LDAP($ldap_server, @$ldap_args);
@@ -604,8 +598,6 @@ sub _GetBoundLdapObj {
     }
 
     if ($ldap_tls) {
-        require Net::SSLeay;
-        $Net::SSLeay::ssl_version = $ldap_ssl_ver;
         # Thanks to David Narayan for the fault tolerance bits
         eval { $ldap->start_tls; };
         if ($@) {
