@@ -298,7 +298,7 @@ use strict;
 $RT::Config::META{ExternalSettings}->{Obfuscate} = sub {
     my ($config, $sources, $user) = @_;
 
-    # XXX $user is never passed from RT as of 4.0.5 :(
+    # $user is only passed in versions of RT with 3c7db050
     my $msg = 'Password not printed';
        $msg = $user->loc($msg) if $user and $user->Id;
 
