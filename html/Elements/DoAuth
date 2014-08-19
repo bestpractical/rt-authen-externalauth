@@ -14,6 +14,9 @@ unless($session{'CurrentUser'} && $session{'CurrentUser'}->Id) {
 
     ($val,$msg) = RT::Authen::ExternalAuth::DoAuth(\%session,$user,$pass);
     $RT::Logger->debug("Autohandler called ExternalAuth. Response: ($val, $msg)");
+    if ( $val ) {
+        $m->callback( %ARGS, CallbackName => 'SuccessfulLogin', CallbackPage => '/autohandler', RedirectTo => \$next );
+    }
 
     # 3.8.9 doesn't redirect to the specified page if request has one.
     RT::Interface::Web::Redirect( $next )
