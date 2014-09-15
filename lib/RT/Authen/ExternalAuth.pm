@@ -480,7 +480,8 @@ sub DoAuth {
         # Unless we have loaded a valid user with a UserID create one.
         unless ($session->{'CurrentUser'}->Id) {
             my $UserObj = RT::User->new($RT::SystemUser);
-            my $create = RT->Config->Get('AutoCreate');
+            my $create = RT->Config->Get('UserAutocreateDefaultsOnLogin')
+                || RT->Config->Get('AutoCreate');
             my ($val, $msg) =
                 $UserObj->Create(%{ref($create) ? $create : {}},
                                  Name   => $username,
