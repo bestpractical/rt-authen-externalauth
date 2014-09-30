@@ -1,6 +1,15 @@
-0.23_01
- - Call core's autohandler/SuccessfulLogin callback after logging in a user.
-   Now code written to run after a core login also runs for external logins.
+0.23_01 2014-09-30
+ - Call core's autohandler/SuccessfulLogin callback after logging in a
+   user.  Now code written to run after a core login also runs for
+   external logins.
+ - Convert to UNIX line endings
+ - Fix typos and errors in debug messages
+ - Fix ExternalInfoPriority variable name in example
+ - Check configs at PostLoadCheck time, instead of every auth
+ - Support verifying LDAPS connections
+ - Respect 4.0 "AutoCreate" as well as 4.2
+   "UserAutocreateDefaultsOnLogin" configs
+ - Packaging updates
 
 0.23 2014-08-14
  - Packaging changes only
