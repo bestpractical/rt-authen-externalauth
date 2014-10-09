@@ -1,3 +1,6 @@
+0.24 2014-10-09
+ - No changes since 0.23_01
+
 0.23_01 2014-09-30
  - Call core's autohandler/SuccessfulLogin callback after logging in a
    user.  Now code written to run after a core login also runs for
