@@ -14,9 +14,11 @@ if ( $val ) {
 RT::Interface::Web::Redirect( $next )
     if $val and $next
    and $m->request_comp->path eq '/NoAuth/Login.html';
+
+# this component should never generate content
+return;
 </%init>
 <%ARGS>
 $user => undef
 $pass => undef
 </%ARGS>
-
