@@ -1,4 +1,7 @@
 <%init>
+# return as quickly as possible if the user is logged in
+return if $session{CurrentUser} && $session{'CurrentUser'}->id;
+
 # It's important to nab the next page from the session before we
 # potentially blow the session away below.
 my $next = $session{'NextPage'}->{ $ARGS{'next'} || "" };
