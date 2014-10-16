@@ -1,3 +1,6 @@
+0.25 2014-10-16
+ - Fix a regression causing Charts and Custom Logos to not render properly
+
 0.24 2014-10-09
  - No changes since 0.23_01
 
