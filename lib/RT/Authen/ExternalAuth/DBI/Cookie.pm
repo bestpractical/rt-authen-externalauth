@@ -14,23 +14,23 @@ Provides the Cookie implementation for L<RT::Authen::ExternalAuth>.
 
 =head1 SYNOPSIS
 
-Set($ExternalSettings, {
-    # An example SSO cookie service
-    'My_SSO_Cookie'  => {
-        'type'                      =>  'cookie',
-        'name'                      =>  'loginCookieValue',
-        'u_table'                   =>  'users',
-        'u_field'                   =>  'username',
-        'u_match_key'               =>  'userID',
-        'c_table'                   =>  'login_cookie',
-        'c_field'                   =>  'loginCookieValue',
-        'c_match_key'               =>  'loginCookieUserID',
-        'db_service_name'           =>  'My_MySQL'
-    },
-    'My_MySQL' => {
-        ...
-    },
-} );
+    Set($ExternalSettings, {
+        # An example SSO cookie service
+        'My_SSO_Cookie'  => {
+            'type'            =>  'cookie',
+            'name'            =>  'loginCookieValue',
+            'u_table'         =>  'users',
+            'u_field'         =>  'username',
+            'u_match_key'     =>  'userID',
+            'c_table'         =>  'login_cookie',
+            'c_field'         =>  'loginCookieValue',
+            'c_match_key'     =>  'loginCookieUserID',
+            'db_service_name' =>  'My_MySQL'
+        },
+        'My_MySQL' => {
+            ...
+        },
+    } );
 
 =head1 CONFIGURATION
 
