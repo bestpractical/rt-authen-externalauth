@@ -400,7 +400,7 @@ $RT::Config::META{ExternalInfoPriority} = {
 };
 
 sub DoAuth {
-    my ($session,$given_user,$given_pass) = @_;
+    my ($session,$given_user,$given_pass,$given_token) = @_;
 
     # Get the prioritised list of external authentication services
     my @auth_services = @{ RT->Config->Get('ExternalAuthPriority') };
@@ -515,7 +515,7 @@ sub DoAuth {
             $success = 1;
         } else {
             $RT::Logger->debug("Password validation required for service - Executing...");
-            $success = RT::Authen::ExternalAuth::GetAuth($service,$username,$given_pass);
+            $success = RT::Authen::ExternalAuth::GetAuth($service,$username,$given_pass,$given_token);
         }
 
         $RT::Logger->debug("Password Validation Check Result: ",$success);
@@ -679,7 +679,7 @@ sub GetAuth {
     # Request a username/password check from the specified service
     # This is only valid for non-SSO services.
 
-    my ($service,$username,$password) = @_;
+    my ($service,$username,$password,$token) = @_;
 
     my $success = 0;
 
@@ -689,7 +689,7 @@ sub GetAuth {
     # And then act accordingly depending on what type of service it is.
     # Right now, there is only code for DBI and LDAP non-SSO services
     if ($config->{'type'} eq 'db') {
-        $success = RT::Authen::ExternalAuth::DBI::GetAuth($service,$username,$password);
+        $success = RT::Authen::ExternalAuth::DBI::GetAuth($service,$username,$password,$token);
         $RT::Logger->debug("DBI password validation result:",$success);
     } elsif ($config->{'type'} eq 'ldap') {
         $success = RT::Authen::ExternalAuth::LDAP::GetAuth($service,$username,$password);

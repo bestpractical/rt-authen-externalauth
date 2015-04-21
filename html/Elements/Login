@@ -1,0 +1,114 @@
+%# BEGIN BPS TAGGED BLOCK {{{
+%#
+%# COPYRIGHT:
+%#
+%# This software is Copyright (c) 1996-2014 Best Practical Solutions, LLC
+%#                                          <sales@bestpractical.com>
+%#
+%# (Except where explicitly superseded by other copyright notices)
+%#
+%#
+%# LICENSE:
+%#
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%#
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%#
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+%#
+%#
+%# CONTRIBUTION SUBMISSION POLICY:
+%#
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%#
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%#
+%# END BPS TAGGED BLOCK }}}
+% $m->callback( %ARGS, CallbackName => 'Header' );
+<& /Elements/Header, Title => loc('Login'), Focus => '#user', RichText => 0 &>
+
+<div id="body" class="login-body">
+
+<& /Elements/ListActions,
+    title       => loc('Error'),
+    titlebox    => { class => 'error', hideable => 0 },
+    actions     => $actions
+&>
+
+% $m->callback( %ARGS, CallbackName => 'BeforeForm' );
+
+<div id="login-box">
+<&| /Widgets/TitleBox, title => loc('Login'), titleright => $RT::VERSION, hideable => 0 &>
+
+<& LoginRedirectWarning, %ARGS &>
+
+% unless (RT->Config->Get('WebRemoteUserAuth') and !RT->Config->Get('WebFallbackToRTLogin')) {
+<form id="login" name="login" method="post" action="<% RT->Config->Get('WebPath') %>/NoAuth/Login.html">
+
+<div class="input-row">
+    <span class="label"><&|/l&>Username</&>:</span>
+    <span class="input"><input name="user" value="<%$user%>" id="user" /></span>
+</div>
+
+<div class="input-row">
+    <span class="label"><&|/l&>Password</&>:</span>
+    <span class="input"><input type="password" name="pass" <% RT->Config->Get('AllowLoginPasswordAutoComplete') ? '' : 'autocomplete="off"' | n %> /></span>
+</div>
+
+<div class="input-row">
+    <span class="label"><&|/l&>Token</&>:</span>
+    <span class="input"><input name="token" value="<%$user%>" /></span>
+</div>
+
+<input type="hidden" name="next" value="<% $next %>" />
+
+<script type="text/javascript">
+jQuery(function(){
+    if (window.location.hash) {
+        var form = jQuery("form[name=login]");
+        form.attr('action', form.attr('action') + '#' + window.location.hash.replace(/^#/, ''));
+    }
+});
+</script>
+
+<div class="button-row">
+    <span class="input"><input type="submit" class="button" value="<&|/l&>Login</&>" /></span>
+</div>
+
+%# Give callbacks a chance to add more control elements
+% $m->callback( %ARGS );
+
+</form>
+% }
+</&>
+<& /Elements/LoginHelp &>
+</div><!-- #login-box -->
+% $m->callback( %ARGS, CallbackName => 'AfterForm' );
+</div><!-- #login-body -->
+<& /Elements/Footer, Menu => 0 &>
+<%ARGS>
+$next => ''
+$user => ""
+$actions => undef
+</%ARGS>

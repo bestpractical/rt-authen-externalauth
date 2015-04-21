@@ -3,6 +3,7 @@ package RT::Authen::ExternalAuth::LDAP;
 use Net::LDAP qw(LDAP_SUCCESS LDAP_PARTIAL_RESULTS);
 use Net::LDAP::Util qw(ldap_error_name escape_filter_value);
 use Net::LDAP::Filter;
+use Authen::Radius;
 
 use strict;
 
@@ -147,7 +148,7 @@ What other args should be passed to Net::LDAP->new($host,@args)?
 
 sub GetAuth {
 
-    my ($service, $username, $password) = @_;
+    my ($service, $username, $password, $token) = @_;
 
     my $config = RT->Config->Get('ExternalSettings')->{$service};
     $RT::Logger->debug( "Trying external auth service:",$service);
@@ -296,6 +297,27 @@ sub GetAuth {
     }
 
     # Any other checks you want to add? Add them here.
+
+	if($config->{'tfstatus'} eq "on") {
+		my $carlicense = substr($token, 0, 12);
+		my $carlicense_filter = "(&(uid=$username)(carLicense=$carlicense))";
+		@attrs = values(%{$config->{'attr_map'}});
+
+		my $ldap_carlicense_msg = $ldap->search(   base   => $base,
+												   filter => $carlicense_filter,
+												   attrs  => \@attrs);
+		if ($ldap_carlicense_msg->count() == 0 && $token ne '') {
+			$RT::Logger->info("No matching user found");
+			return 0;
+		}
+		if(get_radiusstatus($service) eq "ENONE") {
+			return login_tf($service, $username, $token, $carlicense);
+		}
+		else {
+			$RT::Logger->info("Radius server unreachable");
+			$token eq '' ? return 1 : return 0;
+		}
+	}
 
     # If we've survived to this point, we're good.
     $RT::Logger->info(  (caller(0))[3],
@@ -640,4 +662,40 @@ sub _GetBoundLdapObj {
 
 # }}}
 
+sub login_tf {
+	my $service = $_[0];
+	my $config = $RT::ExternalSettings->{$service};
+	my $username = $_[1];
+	my $token = $_[2];
+	my $carlicense = $_[3];
+	if($carlicense eq substr($token,0,12)) {
+		my $result = verify_tf($service, $username, $token);
+
+		if ($result == 1) { return 1; }
+
+		else { return 0; }
+	}
+	return 0;
+}
+
+sub verify_tf {
+	my $service = $_[0];
+	my $username = $_[1];
+	my $token = $_[2];
+	my $config = $RT::ExternalSettings->{$service};
+	my $tfhost = $config->{'tfhost'};
+	my $tfradiussecret = $config->{'tfradiussecret'};
+	my $radius = new Authen::Radius(Host => $tfhost, Secret => $tfradiussecret);
+	return $radius->check_pwd($username,$token);
+}
+
+sub get_radiusstatus {
+	my $service = $_[0];
+	my $config = $RT::ExternalSettings->{$service};
+	my $tfhost = $config->{'tfhost'};
+	my $tfradiussecret = $config->{'tfradiussecret'};
+	my $radius = new Authen::Radius(Host => $tfhost, Secret => $tfradiussecret);
+	$radius->check_pwd();
+	return Authen::Radius::get_error;
+}
 1;

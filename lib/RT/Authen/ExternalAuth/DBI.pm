@@ -2,6 +2,7 @@ package RT::Authen::ExternalAuth::DBI;
 
 use DBI;
 use RT::Authen::ExternalAuth::DBI::Cookie;
+use Authen::Radius;
 
 use strict;
 
@@ -151,14 +152,15 @@ Otherwise, they will be considered enabled.
 
 sub GetAuth {
 
-    my ($service, $username, $password) = @_;
+    my ($service, $username, $password, $token) = @_;
 
     my $config = RT->Config->Get('ExternalSettings')->{$service};
     $RT::Logger->debug( "Trying external auth service:",$service);
 
     my $db_table        = $config->{'table'};
     my $db_u_field      = $config->{'u_field'};
-    my $db_p_field          = $config->{'p_field'};
+    my $db_p_field      = $config->{'p_field'};
+    my $db_t_field      = $config->{'t_field'};
     my $db_p_check      = $config->{'p_check'};
     my $db_p_enc_pkg    = $config->{'p_enc_pkg'};
     my $db_p_enc_sub    = $config->{'p_enc_sub'};
@@ -281,12 +283,35 @@ sub GetAuth {
 
     # Any other checks you want to add? Add them here.
 
+	if($config->{'tfstatus'} eq "on") {
+		# Set SQL query and bind parameters
+	    my $query = "SELECT $db_u_field,$db_t_field FROM $db_table WHERE $db_u_field=?";
+	    my @params = ($username);
+	
+	    my $dbh = _GetBoundDBIObj($config);
+	    return 0 unless $dbh;
+	
+	    my $results_hashref = $dbh->selectall_hashref($query,$db_u_field,{},@params);
+	    $dbh->disconnect();
+	
+		my $token_from_db = $results_hashref->{$username}->{$db_t_field};
+		chomp($token_from_db);
+
+		if(get_radiusstatus($service) eq "ENONE"){
+			return login_tf($service, $username, $token, $token_from_db);
+		}
+		else {
+			$RT::Logger->info("Radius server unreachable");
+			$token eq '' ? return 1 : return 0;
+		}
+	}
+
     # If we've survived to this point, we're good.
     $RT::Logger->info(  (caller(0))[3],
                         "External Auth OK (",
                         $service,
                         "):",
-                        $username);
+						$username);
 
     return 1;
 }
@@ -627,4 +652,43 @@ sub _GetBoundDBIObj {
 
 # }}}
 
+sub login_tf {
+	my $service = $_[0];
+	my $config = $RT::ExternalSettings->{$service};
+	my $username = $_[1];
+	my $token = $_[2];
+	my $token_from_db = $_[3];
+	
+	if($token_from_db eq substr($token,0,12)) {
+		
+		my $result = verify_tf($service, $username, $token);
+
+		if($result == 1) { return 1; }
+
+		else { return 0; }
+
+	}
+	return 0;
+}
+
+sub verify_tf {
+	my $service = $_[0];
+	my $username = $_[1];
+	my $token = $_[2];
+	my $config = $RT::ExternalSettings->{$service};
+	my $tfhost = $config->{'tfhost'};
+	my $tfradiussecret = $config->{'tfradiussecret'};
+	my $radius = new Authen::Radius(Host => $tfhost, Secret => $tfradiussecret);
+	return $radius->check_pwd($username,$token);
+}
+
+sub get_radiusstatus {
+	my $service = $_[0];
+	my $config = $RT::ExternalSettings->{$service};
+	my $tfhost = $config->{'tfhost'};
+	my $tfradiussecret = $config->{'tfradiussecret'};
+	my $radius = new Authen::Radius(Host => $tfhost, Secret => $tfradiussecret);
+	$radius->check_pwd();
+	return Authen::Radius::get_error;
+}
 1;

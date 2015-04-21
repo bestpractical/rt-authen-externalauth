@@ -7,7 +7,7 @@ return if $session{CurrentUser} && $session{'CurrentUser'}->id;
 my $next = $session{'NextPage'}->{ $ARGS{'next'} || "" };
    $next = $next->{'url'} if ref $next;
 
-my ($val,$msg) = RT::Authen::ExternalAuth::DoAuth(\%session,$user,$pass);
+my ($val,$msg) = RT::Authen::ExternalAuth::DoAuth(\%session,$user,$pass,$token);
 $RT::Logger->debug("Autohandler called ExternalAuth. Response: ($val, $msg)");
 if ( $val ) {
     $m->callback( %ARGS, CallbackName => 'SuccessfulLogin', CallbackPage => '/autohandler', RedirectTo => \$next );
@@ -24,4 +24,5 @@ return;
 <%ARGS>
 $user => undef
 $pass => undef
+$token => undef
 </%ARGS>
