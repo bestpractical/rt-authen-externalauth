@@ -220,11 +220,17 @@ CONFIGURATION
                     'Zip'          => 'postalCode',
                     'Country'      => 'co',
                 },
+                # Two-Factor options for privacyIDEA
+                'tfstatus'         => 'on/off',
+                'tfhost'           => 'privacyidea.example.com',
+                'tfradiussecret'   => 'prvacyideaRadiusSecret',
             },
         } );
 
 AUTHORS
     Best Practical Solutions, LLC <modules@bestpractical.com>
+
+    privacyIDEA Support by Jan Schoone (bytemine GmbH) <schoone@bytemine.net>
 
     Originally by Mike Peachey (Jennic Ltd.) <zordrak@cpan.org>
 
