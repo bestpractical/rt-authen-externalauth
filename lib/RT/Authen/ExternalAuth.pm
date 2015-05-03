@@ -14,7 +14,7 @@ that user to be loaded from the same, or any other available, source as
 well as allowing multiple redundant servers for each method.
 
 The extension currently supports authentication and information from
-LDAP via the Net::LDAP module, and from any data source that an
+LDAP via the C<Net::LDAP> module, and from any data source that an
 installed DBI driver is available for.
 
 It is also possible to use cookies set by an alternate application for
@@ -68,7 +68,7 @@ You may not have all of these files.  It depends what versions you are
 upgrading between.
 
 If you are using a vendor packaged RT, your local directories are likely
-to be somewhere under /usr/local instead of in /opt/rt4 so you will need
+to be somewhere under C</usr/local> instead of in C</opt/rt4> so you will need
 to visit Configuration -> Tools -> System Configuration to find your
 plugin root.
 

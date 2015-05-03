@@ -135,7 +135,7 @@ load in your Perl installation.
 
 =item p_salt
 
-If p_enc_sub takes a salt as a second parameter then set it here.
+If C<p_enc_sub> takes a salt as a second parameter then set it here.
 
 =item d_field, d_values
 
