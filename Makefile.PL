@@ -22,6 +22,11 @@ feature 'SSO Cookie Sources' =>
     recommends('CGI::Cookie' => 0),
     ;
 
+feature 'Authen Radius' =>
+    -default => 1,
+    recommends('Authen::Radius' => 0),
+    ;
+
 author_tests('xt');
 
 &auto_install();
