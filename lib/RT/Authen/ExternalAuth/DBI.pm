@@ -63,8 +63,8 @@ DBI-specific options are described here. Shared options
 are described in the F<etc/RT_SiteConfig.pm> file included
 in this distribution.
 
-The example in the L</SYNOPSIS> lists all available options
-and they are described below. See the L<DBI> module for details
+The example in the L</SYNOPSIS> lists all available options;
+they are also described below. See the L<DBI> module for details
 on debugging connection issues.
 
 =over 4
@@ -99,16 +99,16 @@ The database table containing the user information to check against.
 
 =item u_field
 
-The field in the table that holds usernames
+The field in the table that holds usernames.
 
 =item p_field
 
-The field in the table that holds passwords
+The field in the table that holds passwords.
 
 =item p_check
 
 Optional.  An anonymous subroutine definition used to check the (presumably
-hashed) passed from the database with the password entered by the user logging
+hashed) password from the database with the password entered by the user logging
 in.  The subroutine should return true on success and false on failure.  The
 configuration options C<p_enc_pkg> and C<p_enc_sub> will be ignored when
 C<p_check> is defined.

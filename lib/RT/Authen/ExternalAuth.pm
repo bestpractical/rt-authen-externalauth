@@ -11,7 +11,7 @@ RT::Authen::ExternalAuth - RT Authentication using External Sources
 This module provides the ability to authenticate RT users against one or
 more external data sources at once. It will also allow information about
 that user to be loaded from the same, or any other available, source as
-well as allowing multple redundant servers for each method.
+well as allowing multiple redundant servers for each method.
 
 The extension currently supports authentication and information from
 LDAP via the Net::LDAP module, and from any data source that an
@@ -75,7 +75,7 @@ plugin root.
 =head1 CONFIGURATION
 
 L<RT::Authen::ExternalAuth> provides a lot of flexibility with many
-configuration options.  The following desc these configuration options,
+configuration options.  The following describes these configuration options,
 and provides a complete example.
 
 =over 4
@@ -91,7 +91,7 @@ using C<My_LDAP>, remove C<My_MySQL> and C<My_SSO_Cookie>.
 
     Set($ExternalAuthPriority,  [ 'My_LDAP',
                                   'My_MySQL',
-                                  'My_SSO_Cookie'
+                                  'My_SSO_Cookie',
                                 ]
     );
 
@@ -105,7 +105,7 @@ disabled.
 
 Once a user record is found, no more services are checked.
 
-You CANNOT use a SSO cookie to retrieve information.
+You CANNOT use an SSO cookie to retrieve information.
 
 You should remove services you don't use, but you must define
 at least one service.
@@ -127,7 +127,7 @@ email to a support email address.
 
 These are the full settings for each external service as a hash of
 hashes.  Note that you may have as many external services as you wish.
-They will be checked in the order specified in L</$ExternalAuthPriority>
+They will be checked in the order specified in the L</$ExternalAuthPriority>
 and L</$ExternalInfoPriority> directives above.
 
 The outer structure is a key with the authentication option (name of
@@ -193,7 +193,7 @@ C<RealName> or building name).
 
 =item attr_map
 
-Mapping of RT attributes on to attributes in the external source.
+Mapping of RT attributes onto attributes in the external source.
 Valid keys are attributes of an
 L<RT::User|http://bestpractical.com/rt/docs/latest/RT/User.html>.
 The values are attributes from your authentication source.
@@ -220,7 +220,7 @@ For example, an LDAP mapping might look like:
 
     # Users created from LDAP should be Privileged; this is a core RT
     # option.  Additionally, this is the 4.2 name for the option; for RT
-    # 4.0, is it named $AutoCreate   See the core RT documentation at
+    # 4.0, is it named $AutoCreate.  See the core RT documentation at
     # http://docs.bestpractical.com/RT_Config#UserAutocreateDefaultsOnLogin
     # for for further details.
     Set( $UserAutocreateDefaultsOnLogin, { Privileged => 1 } );

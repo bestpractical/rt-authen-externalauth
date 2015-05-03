@@ -39,7 +39,7 @@ are described in the F<etc/RT_SiteConfig.pm> file included
 in this distribution.
 
 The example in the L</SYNOPSIS> lists all available options
-and they are described below.
+as well as being described below.
 
 =over 4
 
