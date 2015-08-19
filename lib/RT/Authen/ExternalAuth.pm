@@ -11,7 +11,7 @@ RT::Authen::ExternalAuth - RT Authentication using External Sources
 This module provides the ability to authenticate RT users against one or
 more external data sources at once. It will also allow information about
 that user to be loaded from the same, or any other available, source as
-well as allowing multple redundant servers for each method.
+well as allowing multiple redundant servers for each method.
 
 The extension currently supports authentication and information from
 LDAP via the Net::LDAP module, and from any data source that an
@@ -20,7 +20,7 @@ installed DBI driver is available for.
 It is also possible to use cookies set by an alternate application for
 Single Sign-On (SSO) with that application.  For example, you may
 integrate RT with your own website login system so that once users log
-in to your website, they will be automagically logged in to RT when they
+in to your website, they will be automatically logged in to RT when they
 access it.
 
 =head1 INSTALLATION
@@ -117,7 +117,7 @@ at least one service.
 
 =item C<$AutoCreateNonExternalUsers>
 
-If this is set to 1, then users should be autocreated by RT
+If this is set to 1, then users should be auto-created by RT
 as internal users if they fail to authenticate from an
 external service. This is useful if you have users outside
 your organization who might interface with RT, perhaps by sending
