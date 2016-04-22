@@ -621,9 +621,23 @@ sub _GetBoundDBIObj {
             for sort keys %extra;
     }
 
+    my $db_type = RT->Config->Get('DatabaseType');
+    if ( $db_type eq 'Oracle' ) {
+        $ENV{'NLS_LANG'} = "AMERICAN_AMERICA.AL32UTF8";
+        $ENV{'NLS_NCHAR'} = "AL32UTF8";   
+    }
+
     # Now let's get connected
     my $dbh = DBI->connect($dsn, $db_user, $db_pass,{RaiseError => 1, AutoCommit => 0 })
             or die $DBI::errstr;
+
+    if ( $db_type eq 'mysql' ) {
+        $dbh->do("SET NAMES 'utf8'");                                
+    }
+
+    if ( $db_type eq 'Pg' ) {
+        $dbh->do("SET bytea_output = 'escape'");                    
+    }
 
     # If we didn't die, return the DBI object handle
     # and hope it's treated sensibly and correctly
