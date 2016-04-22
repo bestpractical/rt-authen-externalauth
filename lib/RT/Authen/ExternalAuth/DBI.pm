@@ -615,6 +615,12 @@ sub _GetBoundDBIObj {
         $dsn = "dbi:$dbi_driver:database=$db_database;host=$db_server;port=$db_port";
     }
 
+    if (RT->Config->Get('DatabaseExtraDSN')) {
+        my %extra = RT->Config->Get('DatabaseExtraDSN');
+        $dsn .= ";$_=$extra{$_}"
+            for sort keys %extra;
+    }
+
     # Now let's get connected
     my $dbh = DBI->connect($dsn, $db_user, $db_pass,{RaiseError => 1, AutoCommit => 0 })
             or die $DBI::errstr;
