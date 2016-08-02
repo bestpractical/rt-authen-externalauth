@@ -25,6 +25,9 @@ access it.
 
 =head1 INSTALLATION
 
+Note that the features provided by this module have been made into core
+features in RT 4.4 and greater.
+
 =over
 
 =item C<perl Makefile.PL>
@@ -37,7 +40,7 @@ May need root permissions
 
 =item Edit your F</opt/rt4/etc/RT_SiteConfig.pm>
 
-If you are using RT 4.2 or greater, add this line:
+If you are using the RT 4.2 series, add this line:
 
     Plugin('RT::Authen::ExternalAuth');
 

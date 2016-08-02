@@ -24,6 +24,8 @@ feature 'SSO Cookie Sources' =>
 
 author_tests('xt');
 
+rt_too_new '4.4.0';
+
 &auto_install();
 
 repository 'https://github.com/bestpractical/rt-authen-externalauth';

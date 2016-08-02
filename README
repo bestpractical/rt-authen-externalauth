@@ -18,13 +18,16 @@ DESCRIPTION
     access it.
 
 INSTALLATION
+    Note that the features provided by this module have been made into core
+    features in RT 4.4 and greater.
+
     perl Makefile.PL
     make
     make install
         May need root permissions
 
     Edit your /opt/rt4/etc/RT_SiteConfig.pm
-        If you are using RT 4.2 or greater, add this line:
+        If you are using the RT 4.2 series, add this line:
 
             Plugin('RT::Authen::ExternalAuth');
 
