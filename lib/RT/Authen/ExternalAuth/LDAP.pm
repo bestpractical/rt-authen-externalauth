@@ -202,6 +202,7 @@ sub GetAuth {
                             ldap_error_name($ldap_msg->code),
                             $ldap_msg->code);
         # Didn't even get a partial result - jump straight to the next external auth service
+        $ldap->unbind;
         return 0;
     }
 
@@ -211,6 +212,7 @@ sub GetAuth {
                             $username,
                             "User not found or more than one user found");
         # We got no user, or too many users.. jump straight to the next external auth service
+        $ldap->unbind;
         return 0;
     }
 
@@ -278,6 +280,7 @@ sub GetAuth {
                                     $ldap_msg->code);
 
             # Fail auth - jump to next external auth service
+            $ldap->unbind;
             return 0;
         }
 
@@ -291,6 +294,7 @@ sub GetAuth {
                                 $username);
 
             # Fail auth - jump to next external auth service
+            $ldap->unbind;
             return 0;
         }
     }
@@ -303,6 +307,7 @@ sub GetAuth {
                         $service,
                         "):",
                         $username);
+    $ldap->unbind;
     return 1;
 
 }
@@ -485,6 +490,7 @@ sub UserExists {
                             ")",
                             $username,
                             "User not found");
+        $ldap->unbind;
         return 0;
     } elsif ($user_found->count > 1) {
         # If more than one result returned, die because we the username field should be unique!
@@ -493,11 +499,13 @@ sub UserExists {
                             ")",
                             $username,
                             "More than one user with that username!");
+        $ldap->unbind;
         return 0;
     }
     undef $user_found;
 
     # If we havent returned now, there must be a valid user.
+    $ldap->unbind;
     return 1;
 }
 
@@ -575,9 +583,11 @@ sub UserDisabled {
     # we are going to assume the user should be disabled
     if ($disabled_users->count) {
         undef $disabled_users;
+        $ldap->unbind;
         return 1;
     } else {
         undef $disabled_users;
+        $ldap->unbind;
         return 0;
     }
 }
