@@ -566,7 +566,7 @@ sub DoAuth {
         if ( @{ RT->Config->Get('ExternalInfoPriority') } ) {
             # Note that UpdateUserInfo does not care how we authenticated the user
             # It will look up user info from whatever is specified in $RT::ExternalInfoPriority
-            ($info_updated,$info_updated_msg) = RT::Authen::ExternalAuth::UpdateUserInfo($session->{'CurrentUser'}->Name);
+            ($info_updated,$info_updated_msg) = RT::Authen::ExternalAuth::UpdateUserInfo(utf8::decode($session->{'CurrentUser'}->Name));
         }
 
         # Now that we definitely have up-to-date user information,
