@@ -30,6 +30,15 @@ requires:
   Net::LDAP: 0
   Net::SSLeay: 0
   perl: 5.8.3
+provides:
+  RT::Authen::ExternalAuth:
+    file: lib/RT/Authen/ExternalAuth.pm
+  RT::Authen::ExternalAuth::DBI:
+    file: lib/RT/Authen/ExternalAuth/DBI.pm
+  RT::Authen::ExternalAuth::LDAP:
+    file: lib/RT/Authen/ExternalAuth/LDAP.pm
+  RT::Authen::ExternalAuth::DBI::Cookie:
+    file: lib/RT/Authen/ExternalAuth/DBI/Cookie.pm
 resources:
   license: http://opensource.org/licenses/gpl-license.php
   repository: https://github.com/bestpractical/rt-authen-externalauth
