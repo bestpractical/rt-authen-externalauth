@@ -63,8 +63,8 @@ LDAP-specific options are described here. Shared options
 are described in the F<etc/RT_SiteConfig.pm> file included
 in this distribution.
 
-The example in the L</SYNOPSIS> lists all available options
-and they are described below. Note that many of these values
+The example in the L</SYNOPSIS> lists all available options;
+they are also described below. Note that many of these values
 are specific to LDAP, so you should consult your LDAP
 documentation for details.
 
@@ -79,7 +79,7 @@ The server hosting the LDAP or AD service.
 The username and password RT should use to connect to the LDAP
 server.
 
-If you can bind to your LDAP server anonymously you may be able to omit these
+If you can bind to your LDAP server anonymously, you may be able to omit these
 options.  Many servers do not allow anonymous binds, or restrict what information
 they can see or how much information they can retrieve.  If your server does not
 allow anonymous binds then you must have a service account created for this

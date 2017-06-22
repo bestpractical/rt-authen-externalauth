@@ -39,7 +39,7 @@ are described in the F<etc/RT_SiteConfig.pm> file included
 in this distribution.
 
 The example in the L</SYNOPSIS> lists all available options
-and they are described below.
+as well as being described below.
 
 =over 4
 
@@ -58,7 +58,7 @@ The username field in the users table.
 =item u_match_key
 
 The field in the users table that uniquely identifies a user
-and also exists in the cookies table. See c_match_key below.
+and also exists in the cookies table. See C<c_match_key> below.
 
 =item c_table
 
@@ -71,7 +71,7 @@ The field that stores cookie values.
 =item c_match_key
 
 The field in the cookies table that uniquely identifies a user
-and also exists in the users table. See u_match_key above.
+and also exists in the users table. See C<u_match_key> above.
 
 =item db_service_name
 
